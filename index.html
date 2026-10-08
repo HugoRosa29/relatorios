@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relatórios Trimestrais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="report.css?v=7">
+</head>
+<body class="home">
+<header id="appbar">
+  <img class="mark" src="assets/logo-verde.png" alt=""><span class="brand"><small>Terracap · Companhia Imobiliária de Brasília</small>Relatórios Trimestrais</span>
+  <span class="spacer"></span>
+  <button class="bar-btn" data-act="importar" title="Carrega um arquivo salvo anteriormente">Abrir cópia de segurança</button>
+  <button class="primary" data-act="novo">+ Novo relatório</button>
+  <input type="file" id="file-import" accept="application/json" multiple hidden>
+</header>
+
+<main id="home">
+  <div class="home-h">
+    <h1>Seus relatórios</h1>
+    <p id="home-sub" class="home-sub"></p>
+  </div>
+  <div id="cards" class="cards"></div>
+  <aside class="tip home-tip">
+    <span class="eyebrow">Montar um relatório reunindo várias áreas</span>
+    <p>Crie um <b>novo relatório</b> (por exemplo, o da COINT) e, ao editar, use <b>Trazer de outro relatório</b> para copiar para ele os tópicos que quiser dos relatórios de outras áreas. Cada tópico trazido continua editável e o original não é alterado.</p>
+  </aside>
+</main>
+
+<div id="toasts"></div>
+
+<dialog id="dlg-novo" aria-labelledby="dlg-novo-t">
+  <form method="dialog" id="form-novo">
+    <h2 id="dlg-novo-t">Novo relatório</h2>
+    <div class="row">
+      <label class="f"><span class="lb">Sigla do setor</span><input type="text" id="n-sigla" placeholder="Ex.: COINT" required></label>
+      <label class="f"><span class="lb">Nº do relatório</span><input type="text" id="n-numero" placeholder="Ex.: 02/26" required></label>
+    </div>
+    <label class="f"><span class="lb">Nome do setor</span><input type="text" id="n-setor" placeholder="Ex.: Coordenação de Tecnologia da Informação e Inovação"></label>
+    <label class="sw f" id="n-trazer-w"><input type="checkbox" id="n-trazer"><span class="trk" aria-hidden="true"></span><span class="sl"><b>Começar trazendo conteúdo de outros relatórios</b><small>Útil para um relatório geral que reúne várias áreas.</small></span></label>
+    <div class="dlg-b">
+      <button type="button" data-act="novo-fechar">Cancelar</button>
+      <button class="primary" type="submit">Criar e editar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="assets/shapes.js"></script>
+<script src="store.js?v=7"></script>
+<script src="home.js?v=7"></script>
+</body>
+</html>

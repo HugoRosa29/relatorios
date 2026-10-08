@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editar relatório</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="report.css?v=7">
+</head>
+<body>
+<header id="appbar">
+  <a class="bar-btn back" href="index.html" title="Voltar para a lista de relatórios">← Todos os relatórios</a>
+  <span class="rel-nome" id="rel-nome"></span>
+  <details class="menu" id="menu-rel">
+    <summary class="bar-btn">Opções ▾</summary>
+    <div class="menu-pop">
+      <button class="mi" data-act="trazer"><b>Trazer de outro relatório</b><small>Copia tópicos de outras áreas para dentro deste</small></button>
+      <button class="mi" data-act="rel-dup"><b>Duplicar este relatório</b><small>Ótimo para começar o próximo trimestre aproveitando o texto atual</small></button>
+      <hr>
+      <button class="mi" data-act="juntar"><b>Juntar PDFs de outras áreas</b><small>Une este relatório e os de outras áreas em um único PDF</small></button>
+      <hr>
+      <button class="mi" data-act="exportar"><b>Salvar cópia de segurança</b><small>Baixa um arquivo para guardar ou levar a outro computador</small></button>
+    </div>
+  </details>
+  <span class="spacer"></span>
+  <span id="save-status" class="hide-m" role="status" aria-live="polite"></span>
+ <button class="bar-btn" data-act="hist" title="Ver versões antigas e restaurar uma delas">Histórico de versões</button>
+  <button id="btn-undo" class="bar-btn" data-act="undo" disabled title="Desfazer a última remoção (Ctrl+Z)">Desfazer</button>
+  <button class="primary" data-act="pdf" title="Gera o arquivo PDF do relatório">Baixar PDF</button>
+</header>
+
+<nav id="mtabs" aria-label="Alternar tela">
+  <button data-act="vista" data-v="edit" class="on">Editar</button>
+  <button data-act="vista" data-v="prev">Ver relatório</button>
+</nav>
+
+<div id="app">
+  <aside id="editor" aria-label="Edição do relatório">
+    <nav id="tabs" role="tablist" aria-label="Etapas"></nav>
+    <div id="ed-body"></div>
+  </aside>
+  <main id="preview-wrap">
+    <div id="hist-bar" hidden role="status"><span id="hist-txt"></span><span class="hist-b"><button class="primary mini" id="hist-rest" data-act="hist-restaurar">Restaurar esta versão</button><button class="mini" data-act="hist-sair">Voltar ao relatório atual</button></span></div>
+    <div id="toolbar">
+      <span id="page-count"></span>
+      <span class="hint-t">Clique em qualquer parte da página para editar aquele trecho.</span>
+      <div class="zoom" role="group" aria-label="Zoom da visualização">
+        <button class="mini" data-act="zoom-out" aria-label="Diminuir zoom" title="Diminuir">−</button>
+        <span id="zoom-lbl">100%</span>
+        <button class="mini" data-act="zoom-in" aria-label="Aumentar zoom" title="Aumentar">+</button>
+        <button class="mini" data-act="zoom-fit" title="Ajusta a página à largura da tela">Ajustar à tela</button>
+      </div>
+    </div>
+    <div id="preview"><div class="pages" id="pages"></div></div>
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<dialog id="dlg-pdf" aria-labelledby="dlg-pdf-t">
+  <h2 id="dlg-pdf-t">Como salvar o PDF</h2>
+  <p>Vai abrir a janela de impressão do navegador. Nela, confira estas 3 opções:</p>
+  <ol>
+    <li><b>Destino:</b> escolha <i>Salvar como PDF</i>.</li>
+    <li><b>Margens:</b> escolha <i>Nenhuma</i>.</li>
+    <li><b>Mais definições:</b> marque <i>Gráficos de segundo plano</i> (senão as cores somem).</li>
+  </ol>
+  <label class="chk"><input type="checkbox" id="pdf-naomostrar"> Não mostrar este aviso de novo</label>
+  <div class="dlg-b">
+    <button data-act="dlg-close">Cancelar</button>
+    <button class="primary" data-act="pdf-go">Entendi, abrir impressão</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-trazer" class="wide" aria-labelledby="dlg-trazer-t">
+  <h2 id="dlg-trazer-t">Trazer de outro relatório</h2>
+  <p class="jn-help">Marque os tópicos que quer copiar. Eles entram no <b>fim</b> deste relatório e você pode editá-los, mover ou remover à vontade. O relatório de origem não é alterado.</p>
+  <div id="tz-lista" class="tz-lista"></div>
+  <p id="tz-resumo" class="jn-resumo" role="status"></p>
+  <div class="dlg-b">
+    <button data-act="trazer-fechar">Cancelar</button>
+    <button class="primary" id="tz-go" data-act="trazer-go" disabled>Trazer para este relatório</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-juntar" aria-labelledby="dlg-juntar-t">
+  <h2 id="dlg-juntar-t">Juntar PDFs em um só</h2>
+  <p class="jn-help">1. Baixe o PDF deste relatório (botão <b>Baixar PDF</b>).<br>2. Adicione abaixo esse PDF e os das outras áreas.<br>3. Ordene e clique em <b>Gerar PDF único</b>.</p>
+  <ul id="jn-lista" class="jn-lista"></ul>
+  <button type="button" class="jn-add" data-act="juntar-add">+ Adicionar PDFs</button>
+  <input type="file" id="file-juntar" accept="application/pdf,.pdf" multiple hidden>
+  <p id="jn-resumo" class="jn-resumo" role="status"></p>
+  <div class="dlg-b">
+    <button data-act="juntar-fechar">Fechar</button>
+    <button class="primary" id="jn-go" data-act="juntar-go" disabled>Gerar PDF único</button>
+  </div>
+</dialog>
+
+<script src="assets/pdf-lib.min.js"></script>
+<script src="assets/shapes.js"></script>
+<script src="store.js?v=7"></script>
+<script src="historico.js?v=7"></script>
+<script src="app.js?v=7"></script>
+</body>
+</html>
