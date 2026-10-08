@@ -16,12 +16,12 @@ function salvar() {
 function thumbHTML(r) {
   const m = r.meta, geral = !!m.capaGeral, id = 'th' + r.id;
   const swoosh = `<svg class="full" viewBox="0 0 595 842"><path fill-rule="evenodd" clip-rule="evenodd" d="${SHAPES.swooshCover}" fill="#fff" fill-opacity="0.1"/></svg>`;
-  const foto = src => `<svg class="full" viewBox="0 0 595 842"><defs><clipPath id="${id}"><path d="${SHAPES.photoClip}"/></clipPath></defs>${src
-    ? `<image href="${src}" x="0" y="0" width="595" height="842" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>`
+  const foto = (src, pos) => `<svg class="full" viewBox="0 0 595 842"><defs><clipPath id="${id}"><path d="${SHAPES.photoClip}"/></clipPath></defs>${src
+    ? fotoImagem(src, pos, id)
     : `<rect width="595" height="842" fill="#fff" fill-opacity=".18" clip-path="url(#${id})"/>`}</svg>`;
   const pg = geral
-    ? `<section class="page t-verde capa geral">${foto(m.capaGeralFoto)}${swoosh}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº ${esc(m.numero)} | ${esc(m.orgao)}</div></section>`
-    : `<section class="page t-${m.tema || 'dourado'} capa">${swoosh}${foto(m.capa)}<img class="logo-c" src="assets/logo.png"><h1>${esc(m.setor)}</h1></section>`;
+    ? `<section class="page t-verde capa geral">${foto(m.capaGeralFoto, m.capaGeralFotoPos)}${swoosh}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº ${esc(m.numero)} | ${esc(m.orgao)}</div></section>`
+    : `<section class="page t-${m.tema || 'dourado'} capa">${swoosh}${foto(m.capa, m.capaPos)}<img class="logo-c" src="assets/logo.png"><h1>${esc(m.setor)}</h1></section>`;
   return `<div class="rc-thumb" aria-hidden="true">${pg}</div>`;
 }
 function cardHTML(r) {

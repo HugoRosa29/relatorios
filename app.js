@@ -61,6 +61,27 @@ let seletorAberto = null; // índice do tópico com o seletor de blocos aberto
 let foco = null;          // o que destacar/focar após redesenhar o editor
 const dicaFechada = () => { try { return localStorage.getItem(KEY + '-dica') === '1'; } catch { return false; } };
 
+/* Enquadramento da foto da capa: arrastar para reposicionar + zoom */
+/* posição atual já em pixels (converte o formato antigo em %) */
+function normPos(box) {
+  const img = box.querySelector('img'), p = posDe(box.dataset.enq), r = fotoRect(p, img.naturalWidth, img.naturalHeight);
+  return { z: p.z, ox: r.x0 - (595 - r.W) / 2, oy: r.y0 - (842 - r.H) / 2 };
+}
+const posDe = path => getp(R(), path + 'Pos') || { ox: 0, oy: 0, z: 1 };
+const enqHTML = (path, src) => `<div class="enq" data-enq="${path}"><div class="enq-box" title="Arraste a foto para reposicionar"><img src="${src}" alt="Enquadramento da foto" draggable="false" onload="layoutEnq(this.closest('.enq'))"></div>
+  <div class="enq-ctl"><label>Zoom <input type="range" min="0.5" max="3" step="0.05" value="${posDe(path).z}" data-enq-z></label><button type="button" class="mini" data-act="enq-reset" data-path="${path}">Centralizar</button></div>
+  <small class="help">Arraste a foto para qualquer lado. Com zoom abaixo de 1 ela fica menor que a página.</small></div>`;
+function layoutEnq(box) {
+  const img = box.querySelector('img'); if (!img.naturalWidth) return;
+  const r = fotoRect(posDe(box.dataset.enq), img.naturalWidth, img.naturalHeight);
+  Object.assign(img.style, { width: r.W / 595 * 100 + '%', height: r.H / 842 * 100 + '%', left: r.x0 / 595 * 100 + '%', top: r.y0 / 842 * 100 + '%' });
+}
+function gravarPos(box, p) {
+  const img = box.querySelector('img');
+  setp(R(), box.dataset.enq + 'Pos', { ox: p.ox, oy: p.oy, z: p.z, w: img.naturalWidth, h: img.naturalHeight });
+  layoutEnq(box); save(); refresh();
+}
+
 function fieldHTML(path, f, val) {
   const a = `data-path="${path}"`;
   const help = f.h ? `<small class="help">${f.h}</small>` : '';
@@ -73,7 +94,7 @@ function fieldHTML(path, f, val) {
     case 'lines': return `<div class="f"><span class="lb">${f.l}</span>${help}<div data-lines="${path}">${(val?.length ? val : ['']).map(lineRow).join('')}</div><button type="button" class="mini" data-act="line-add">+ Adicionar ${f.item || 'linha'}</button></div>`;
     case 'select': return `<label class="f"><span class="lb">${f.l}</span><select ${a}>${Object.entries(f.o).map(([k, v]) => `<option value="${k}" ${val === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>`;
     case 'check': return `<label class="sw f"><input type="checkbox" ${a} ${val ? 'checked' : ''}><span class="trk" aria-hidden="true"></span><span class="sl"><b>${f.l}</b>${f.h ? `<small>${f.h}</small>` : ''}</span></label>`;
-    case 'image': return `<div class="f"><span class="lb">${f.l}</span>${help}<div class="img-f">${val ? `<img class="thumb" src="${val}" alt="Miniatura da imagem escolhida">` : ''}<label class="btn">${val ? 'Trocar imagem' : 'Escolher imagem…'}<input type="file" accept="image/*" data-img="${path}" hidden></label>${val ? `<button type="button" class="mini danger" data-act="img-clear" data-path="${path}">Remover</button>` : ''}</div></div>`;
+    case 'image': return `<div class="f"><span class="lb">${f.l}</span>${help}${f.enq && val ? enqHTML(path, val) : ''}<div class="img-f">${val && !f.enq ? `<img class="thumb" src="${val}" alt="Miniatura da imagem escolhida">` : ''}<label class="btn">${val ? 'Trocar imagem' : 'Escolher imagem…'}<input type="file" accept="image/*" data-img="${path}" hidden></label>${val ? `<button type="button" class="mini danger" data-act="img-clear" data-path="${path}">Remover</button>` : ''}</div></div>`;
     case 'list': return `<div class="f"><span class="lb">${f.l}</span>${(val || []).map((it, j) => `<div class="sub"><div class="sub-h"><span>${f.item[0].toUpperCase() + f.item.slice(1)} ${j + 1}</span><button type="button" class="mini danger" data-act="list-del" data-path="${path}" data-idx="${j}">Remover</button></div>${f.sub.map(s => fieldHTML(`${path}.${j}.${s.k}`, s, it[s.k])).join('')}</div>`).join('')}<button type="button" class="mini" data-act="list-add" data-path="${path}" data-tipo="${f.__tipo || ''}" data-campo="${f.k}">+ Adicionar ${f.item}</button></div>`;
   }
   return '';
@@ -115,7 +136,7 @@ function secaoHTML(s, si, n) {
   if (s.capa) return `<details class="secao" ${s._aberta ? 'open' : ''} data-si="${si}">
     <summary><span class="num">${si + 1}</span><span class="tt">Capa — ${esc(s.setor)}<small class="orig">trazida de ${esc(s.origem)}</small></span><span class="cnt">capa</span>
       <span class="acts"><button type="button" class="ico" data-act="item-up" data-path="secoes.${si}" title="Mover para cima" aria-label="Mover capa para cima" ${si === 0 ? 'disabled' : ''}>↑</button><button type="button" class="ico" data-act="item-down" data-path="secoes.${si}" title="Mover para baixo" aria-label="Mover capa para baixo" ${si === n - 1 ? 'disabled' : ''}>↓</button><button type="button" class="ico danger" data-act="del" data-path="secoes.${si}" title="Remover capa" aria-label="Remover capa">✕</button></span><span class="chev" aria-hidden="true"></span></summary>
-    <div class="secao-body">${fieldHTML(`secoes.${si}.setor`, { t: 'text', l: 'Nome do setor na capa' }, s.setor)}${fieldHTML(`secoes.${si}.foto`, { t: 'image', l: 'Foto da capa' }, s.foto)}</div></details>`;
+    <div class="secao-body">${fieldHTML(`secoes.${si}.setor`, { t: 'text', l: 'Nome do setor na capa' }, s.setor)}${fieldHTML(`secoes.${si}.foto`, { t: 'image', enq: 1, l: 'Foto da capa' }, s.foto)}</div></details>`;
   return `<details class="secao" ${s._aberta ? 'open' : ''} data-si="${si}">
     <summary><span class="num">${si + 1}</span><span class="tt">${esc(s.titulo || 'Tópico sem título')}${s.origem ? `<small class="orig">trazido de ${esc(s.origem)}</small>` : ''}</span><span class="cnt">${nb} bloco${nb === 1 ? '' : 's'}</span>
       <span class="acts"><button type="button" class="ico" data-act="item-up" data-path="secoes.${si}" title="Mover tópico para cima" aria-label="Mover tópico para cima" ${si === 0 ? 'disabled' : ''}>↑</button><button type="button" class="ico" data-act="item-down" data-path="secoes.${si}" title="Mover tópico para baixo" aria-label="Mover tópico para baixo" ${si === n - 1 ? 'disabled' : ''}>↓</button><button type="button" class="ico danger" data-act="del" data-path="secoes.${si}" title="Remover tópico" aria-label="Remover tópico">✕</button></span><span class="chev" aria-hidden="true"></span></summary>
@@ -140,7 +161,7 @@ const PANES = {
     </div>
     <div class="card"><h2>Aparência</h2>
       <div class="f"><span class="lb">Cor do setor</span><div class="swatches">${Object.entries(TEMAS).map(([k, v]) => `<button type="button" class="swatch ${m.tema === k ? 'on' : ''}" data-act="tema" data-v="${k}" aria-pressed="${m.tema === k}"><i style="background:${COR[k]}"></i>${v}</button>`).join('')}</div></div>
-      ${fieldHTML('meta.capa', { t: 'image', l: 'Foto da página de abertura', h: 'Opcional. Se não escolher, a página fica só com a cor.' }, m.capa)}
+      ${fieldHTML('meta.capa', { t: 'image', enq: 1, l: 'Foto da página de abertura', h: 'Opcional. Se não escolher, a página fica só com a cor.' }, m.capa)}
     </div>
     <div class="nav-b"><span></span><button type="button" class="primary" data-act="aba" data-v="resumo">Próximo: Resumo →</button></div>`;
   },
@@ -165,7 +186,7 @@ const PANES = {
   extras(r, m) {
     return `<p class="lead">Tudo aqui é opcional. Use quando este PDF for o <b>relatório completo</b>, e não só a parte do seu setor.</p>
     <div class="optbox">${fieldHTML('meta.capaGeral', { t: 'check', l: 'Capa geral do relatório', h: 'Primeira página, verde, com o título “Relatório Trimestral”.' }, m.capaGeral)}
-      <div class="nested" ${m.capaGeral ? '' : 'hidden'}>${fieldHTML('meta.orgao', { t: 'text', l: 'Nome do órgão na capa', p: 'Ex.: Controladoria Interna' }, m.orgao)}${fieldHTML('meta.capaGeralFoto', { t: 'image', l: 'Foto da capa geral' }, m.capaGeralFoto)}</div></div>
+      <div class="nested" ${m.capaGeral ? '' : 'hidden'}>${fieldHTML('meta.orgao', { t: 'text', l: 'Nome do órgão na capa', p: 'Ex.: Controladoria Interna' }, m.orgao)}${fieldHTML('meta.capaGeralFoto', { t: 'image', enq: 1, l: 'Foto da capa geral' }, m.capaGeralFoto)}</div></div>
     <div class="optbox">${fieldHTML('meta.sumario', { t: 'check', l: 'Sumário automático', h: 'Índice azul com os títulos e o número de cada página.' }, m.sumario)}
       <div class="nested" ${m.sumario ? '' : 'hidden'}>${fieldHTML('meta.sumarioModo', { t: 'select', l: 'O que o sumário lista', o: { tudo: 'Todas as atividades (e as capas dos setores)', capas: 'Somente as capas dos setores' } }, m.sumarioModo || 'tudo')}<small class="help">“Somente as capas” serve para o relatório geral: o sumário mostra cada setor trazido de outro relatório, sem detalhar as atividades.</small></div></div>
     <div class="optbox">${fieldHTML('meta.contracapa', { t: 'check', l: 'Contracapa', h: 'Última página, verde, de encerramento.' }, m.contracapa)}</div>
@@ -218,10 +239,23 @@ ed.addEventListener('input', e => {
   if (/^meta\.(sigla|numero)$/.test(el.dataset.path)) { const m = R().meta; tituloBarra(); }
   save(); refresh();
 });
+/* Enquadramento: zoom e arraste */
+ed.addEventListener('input', e => { const z = e.target.closest?.('[data-enq-z]'); if (!z) return; const box = z.closest('.enq'); gravarPos(box, { ...normPos(box), z: +z.value }); });
+ed.addEventListener('pointerdown', e => {
+  const bx = e.target.closest('.enq-box'); if (!bx) return;
+  const box = bx.closest('.enq'), img = bx.querySelector('img'); if (!img.naturalWidth) return;
+  e.preventDefault(); bx.setPointerCapture(e.pointerId);
+  const p0 = normPos(box), r0 = fotoRect(p0, img.naturalWidth, img.naturalHeight);
+  const k = 595 / bx.clientWidth, x0 = e.clientX, y0 = e.clientY, m = 80; // sempre sobra um pedaço da foto visível
+  const lim = (v, W, tam) => Math.max(m - W - (tam - W) / 2, Math.min(tam - m - (tam - W) / 2, v));
+  const mv = ev => gravarPos(box, { z: p0.z, ox: lim(p0.ox + (ev.clientX - x0) * k, r0.W, 595), oy: lim(p0.oy + (ev.clientY - y0) * k, r0.H, 842) });
+  const up = () => { bx.removeEventListener('pointermove', mv); bx.removeEventListener('pointerup', up); bx.removeEventListener('pointercancel', up); };
+  bx.addEventListener('pointermove', mv); bx.addEventListener('pointerup', up); bx.addEventListener('pointercancel', up);
+});
 ed.addEventListener('toggle', e => { const d = e.target; if (d.dataset?.si != null) R().secoes[d.dataset.si]._aberta = d.open; }, true);
 ed.addEventListener('change', async e => {
   const el = e.target; if (!el.dataset.img || !el.files[0]) return;
-  setp(R(), el.dataset.img, await compress(el.files[0]));
+  setp(R(), el.dataset.img, await compress(el.files[0])); setp(R(), el.dataset.img + 'Pos', undefined);
   save(); renderEditor(); renderPreview(); toast('Imagem adicionada.');
 });
 ed.addEventListener('keydown', e => {
@@ -320,7 +354,8 @@ document.addEventListener('click', e => {
     case 'item-up': case 'item-down': { const [arr, i] = parentOf(p); swap(arr, i, a === 'item-up' ? -1 : 1); break; }
     case 'list-add': { const T = TIPOS[b.dataset.tipo]; getp(r, p).push(T.campos.find(c => c.k === b.dataset.campo).novo()); break; }
     case 'list-del': snapshot(); getp(r, p).splice(+b.dataset.idx, 1); removido('Cartão removido.'); break;
-    case 'img-clear': snapshot(); setp(r, p, ''); removido('Imagem removida.'); break;
+    case 'enq-reset': { const b = document.querySelector(`.enq[data-enq="${p}"]`); gravarPos(b, { ox: 0, oy: 0, z: 1 }); b.querySelector('[data-enq-z]').value = 1; return; }
+    case 'img-clear': snapshot(); setp(r, p, ''); setp(r, p + 'Pos', undefined); removido('Imagem removida.'); break;
     default: return;
   }
   save(); renderEditor(); renderPreview();
@@ -345,10 +380,10 @@ $('pages').addEventListener('click', e => {
 /* ===== Renderização do relatório (595 x 842, medidas do Figma) ===== */
 const pad2 = n => String(n).padStart(2, '0');
 const swoosh = (d, rule = '') => `<svg class="full" viewBox="0 0 595 842"><path ${rule} d="${d}" fill="#fff" fill-opacity="0.1"/></svg>`;
-const fotoSVG = src => {
+const fotoSVG = (src, pos) => {
   const id = 'pc' + uid();
   return `<svg class="full" viewBox="0 0 595 842"><defs><clipPath id="${id}"><path d="${SHAPES.photoClip}"/></clipPath></defs>${src
-    ? `<image href="${src}" x="0" y="0" width="595" height="842" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>`
+    ? fotoImagem(src, pos, id)
     : `<rect width="595" height="842" fill="#fff" fill-opacity=".18" clip-path="url(#${id})"/>`}</svg>`;
 };
 const FOOT = `<svg class="full" viewBox="0 0 595 842"><path d="${SHAPES.footGrey}" fill="#959595"/><path d="${SHAPES.footGold}" style="fill:var(--main)"/></svg>`;
@@ -421,14 +456,14 @@ async function renderPreview() {
   const internas = (extra = '', style = '', c = ctxPadrao) => add(`t-${c.tema} ${extra}`, `<img class="bgc" src="assets/bg-conteudo.png">${FOOT}<div class="hd-txt">Relatório Trimestral nº ${esc(c.numero)} ${esc(c.sigla)}</div><img class="hd-logo" src="assets/logo-escuro.png"><div class="body"></div>`, `style="${style}" data-tema="${c.tema}"`);
 
   // Capa geral (opcional) — verde, como a capa do relatório consolidado
-  if (m.capaGeral) add('t-verde capa geral', `${fotoSVG(m.capaGeralFoto)}${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº ${esc(m.numero)} | ${esc(m.orgao)}</div>`);
+  if (m.capaGeral) add('t-verde capa geral', `${fotoSVG(m.capaGeralFoto, m.capaGeralFotoPos)}${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº ${esc(m.numero)} | ${esc(m.orgao)}</div>`);
   // Relatório consolidado: a capa de abertura vem dos outros relatórios, então a do próprio setor não é gerada.
   // Abre o relatório a capa geral; sem ela, a primeira capa trazida (se for o primeiro item); senão, a do próprio setor.
-  const capaTrazida = s => add(`t-${(s.ctx || ctxPadrao).tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(s.foto)}<img class="logo-c" src="assets/logo.png"><h1>${esc(s.setor)}</h1>`, `data-si="${r.secoes.indexOf(s)}"`);
+  const capaTrazida = s => add(`t-${(s.ctx || ctxPadrao).tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(s.foto, s.fotoPos)}<img class="logo-c" src="assets/logo.png"><h1>${esc(s.setor)}</h1>`, `data-si="${r.secoes.indexOf(s)}"`);
   const abertura = !m.capaGeral && r.secoes[0] && r.secoes[0].capa ? r.secoes[0] : null;
   const abrirSetor = () => {
     if (m.capaGeral || abertura) return;
-    add(`t-${tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(m.capa)}<img class="logo-c" src="assets/logo.png"><h1>${esc(m.setor)}</h1>`);
+    add(`t-${tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(m.capa, m.capaPos)}<img class="logo-c" src="assets/logo.png"><h1>${esc(m.setor)}</h1>`);
   };
   if (abertura) sumEntries.push({ t: abertura.setor, p: capaTrazida(abertura), capa: true });
   else if (!m.capaGeral) abrirSetor();

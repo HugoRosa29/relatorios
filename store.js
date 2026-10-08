@@ -4,6 +4,20 @@ const KEY = 'relatorios-trimestrais-v2';
 const uid = () => Math.random().toString(36).slice(2, 9);
 const $ = id => document.getElementById(id);
 
+/* Foto da capa (595x842) com enquadramento: pos = { ox, oy, z, w, h } — ox/oy = deslocamento em pixels da página a partir do centro
+   (livre para os dois lados), z = zoom (1 = preenche a página; menor deixa sobrar espaço), w/h = tamanho original da imagem.
+   Sem pos, preenche e centraliza. (Formato antigo x/y em % ainda é lido.) */
+function fotoRect(pos, w, h) {
+  const s = Math.max(595 / w, 842 / h) * (pos.z || 1), W = w * s, H = h * s;
+  const ox = pos.ox != null ? pos.ox : (595 - W) * ((pos.x ?? 50) - 50) / 100, oy = pos.oy != null ? pos.oy : (842 - H) * ((pos.y ?? 50) - 50) / 100;
+  return { W, H, x0: (595 - W) / 2 + ox, y0: (842 - H) / 2 + oy };
+}
+function fotoImagem(src, pos, clip) {
+  if (!pos || !pos.w || !pos.h) return `<image href="${src}" x="0" y="0" width="595" height="842" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})"/>`;
+  const r = fotoRect(pos, pos.w, pos.h);
+  return `<image href="${src}" x="${r.x0}" y="${r.y0}" width="${r.W}" height="${r.H}" preserveAspectRatio="none" clip-path="url(#${clip})"/>`;
+}
+
 const TEMAS = { dourado: 'Dourado (COTIN)', verde: 'Verde (Controladoria / DIGER)', azul: 'Azul (CORED)', aco: 'Azul-aço (DICOP)' };
 const COR = { dourado: '#D0A010', verde: '#276645', azul: '#004A80', aco: '#4D82A4' };
 
