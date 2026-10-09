@@ -269,8 +269,7 @@ const LAYOUTS = {
     novo: () => ({ titulo: '', modo: 'pizza', series: ['Atendidas no Prazo #276645', 'Fora do Prazo #004A80'], dados: ['Atendidas no Prazo | 90', 'Fora do Prazo | 10'], centro: '', texto: 'Vale destacar que demandas mais complexas **exigem um tempo maior de análise das partes técnicas**, sendo necessário requerer prorrogação do prazo aos órgãos que fizeram a solicitação.', fonte: '**Fonte:** Sistema GDO' }),
     campos: [{ k: 'titulo', t: 'text', l: 'Título (opcional)' },
       { k: 'modo', t: 'select', l: 'Tipo de gráfico', o: { pizza: 'Pizza', rosca: 'Rosca', colunas: 'Colunas', barras: 'Barras (horizontais)', empilhadas: 'Barras empilhadas' } },
-      { k: 'series', t: 'lines', l: 'Legenda (uma por série)', item: 'série', cor: 1, h: 'Clique no quadradinho colorido para escolher a cor. Na pizza/rosca, cada linha é uma fatia, na ordem dos dados.' },
-      { k: 'dados', t: 'lines', l: 'Dados (formato: Nome | número | número…)', item: 'linha de dados' },
+      { k: 'dados', t: 'graf' },
       { k: 'centro', t: 'text', l: 'Texto no centro da rosca (opcional)', se: s => s.modo === 'rosca' },
       { k: 'texto', t: 'area', l: 'Texto ao lado do gráfico (opcional)', h: 'Aparece numa caixa colorida à direita.' },
       { k: 'fonte', t: 'text', l: 'Fonte / observação (opcional)' }],
@@ -494,7 +493,7 @@ function opHTML(o) {
       const f = FONTES[o.font], jv = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[o.valign];
       const gap = o.gap != null ? o.gap : Math.round(o.size * .5);
       const ps = paragrafos(o.text, gap).map(p => `<div style="margin-bottom:${p.gap}px">${p.runs.map(r => (r.b || o.bold) ? `<b>${escH(r.t)}</b>` : escH(r.t)).join('')}</div>`).join('');
-      const ed = o.ed != null ? ` data-ed="${escH(o.ed)}" data-em="${o.em || 't'}"${o.cell != null ? ` data-cell="${o.cell}"` : ''}` : o.edf ? ` data-edf="${escH(o.edf)}"` : o.img ? ` data-img="${o.img}"` : ''; // edição direta no palco
+      const ed = o.ed != null ? ` data-ed="${escH(o.ed)}" data-em="${o.em || 't'}"${o.cell != null ? ` data-cell="${o.cell}"` : ''}${o.ph ? ` data-ph="${escH(o.ph)}"` : ''}` : o.edf ? ` data-edf="${escH(o.edf)}"` : o.img ? ` data-img="${o.img}"` : ''; // edição direta no palco
       return `<div class="o ot" style="${pos};display:flex;flex-direction:column;justify-content:${jv};font-family:${f.css};font-size:${o.size}px;line-height:${o.lh}px;color:${o.color};text-align:${o.align}${o.up ? ';text-transform:uppercase' : ''}${o.bold ? ';font-weight:700' : ''}"${ed}>${ps}</div>`;
     }
   }

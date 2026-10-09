@@ -10,7 +10,7 @@ const TIPOS = {
   barra:      { ic: 'BAR', nome: 'Barra de progresso', desc: 'Mostra uma porcentagem, ex.: 100% entregue', campos: [{ k: 'titulo', t: 'text', l: 'Título (opcional)' }, { k: 'percentual', t: 'number', l: 'Porcentagem concluída (0 a 100)', min: 0, max: 100 }, { k: 'legenda', t: 'text', l: 'Texto abaixo da barra', p: 'Ex.: ENTREGUES' }], novo: () => ({ titulo: '', percentual: 100, legenda: '' }) },
   kpis:       { ic: 'KPI', nome: 'Indicadores em destaque', desc: 'Cartões com números grandes, ex.: 99,83%', campos: [{ k: 'horizontal', t: 'check', l: 'Colocar os cartões lado a lado', h: 'Desligado: um cartão embaixo do outro.' }, { k: 'cards', t: 'list', l: 'Cartões', item: 'cartão', novo: () => ({ rotulo: '', valor: '', legenda: '' }), sub: [{ k: 'rotulo', t: 'text', l: 'Nome do indicador', p: 'Ex.: Chamados atendidos' }, { k: 'valor', t: 'text', l: 'Número (ex.: 99,83%)' }, { k: 'legenda', t: 'text', l: 'Observação (opcional)' }] }], novo: () => ({ horizontal: false, cards: [{ rotulo: '', valor: '', legenda: '' }] }) },
   tabela:     { ic: 'TAB', nome: 'Tabela', desc: 'Linhas e colunas, com cabeçalho colorido', campos: [{ k: 'colunas', t: 'grid' }, { k: 'simples', t: 'check', l: 'Primeira coluna sem negrito' }], novo: () => ({ colunas: ['Coluna 1', 'Coluna 2'], linhas: [' | '] }) },
-  grafico:    { ic: 'GRF', nome: 'Gráfico', desc: 'Colunas, barras, barras empilhadas ou pizza, a partir dos números', campos: [{ k: 'titulo', t: 'text', l: 'Título do gráfico (opcional)' }, { k: 'modo', t: 'select', l: 'Tipo de gráfico', o: { colunas: 'Colunas', barras: 'Barras (horizontais)', empilhadas: 'Barras empilhadas', pizza: 'Pizza' } }, { k: 'series', t: 'lines', l: 'Legenda (uma linha por série, na ordem das colunas de números)', item: 'série', cor: 1, h: 'Clique no quadradinho colorido para escolher a cor da série.' }, { k: 'dados', t: 'lines', l: 'Dados (formato: Nome | número | número…)', item: 'linha de dados' }, { k: 'fonte', t: 'text', l: 'Fonte / observação (opcional)' }], novo: () => ({ titulo: '', modo: 'colunas', series: ['Série 1'], dados: ['Item A | 10', 'Item B | 6'], fonte: '' }) },
+  grafico:    { ic: 'GRF', nome: 'Gráfico', desc: 'Colunas, barras, barras empilhadas ou pizza, a partir dos números', campos: [{ k: 'titulo', t: 'text', l: 'Título do gráfico (opcional)' }, { k: 'modo', t: 'select', l: 'Tipo de gráfico', o: { colunas: 'Colunas', barras: 'Barras (horizontais)', empilhadas: 'Barras empilhadas', pizza: 'Pizza' } }, { k: 'dados', t: 'graf' }, { k: 'fonte', t: 'text', l: 'Fonte / observação (opcional)' }], novo: () => ({ titulo: '', modo: 'colunas', series: ['Série 1'], dados: ['Item A | 10', 'Item B | 6'], fonte: '' }) },
   imagem:     { ic: 'IMG', nome: 'Imagem', desc: 'Uma foto ou figura, com legenda opcional', campos: [{ k: 'src', t: 'image', l: 'Imagem' }, { k: 'altura', t: 'range', l: 'Altura da imagem', min: 80, max: 600, step: 10 }, { k: 'sangria', t: 'check', l: 'Usar a largura total da página', h: 'A imagem vai de uma borda à outra, sem margens.' }, { k: 'legenda', t: 'text', l: 'Legenda (opcional)' }], novo: () => ({ src: '', altura: 320, sangria: false, legenda: '' }) },
 };
 
@@ -91,7 +91,7 @@ function fieldHTML(path, f, val) {
     case 'number': return `<label class="f"><span class="lb">${f.l}</span>${help}<input type="number" inputmode="numeric" ${a} value="${esc(val)}"${f.min != null ? ` min="${f.min}" max="${f.max}"` : ''}></label>`;
     case 'range': return `<label class="f"><span class="lb">${f.l}<output class="rv">${esc(val)}</output></span>${help}<input type="range" ${a} min="${f.min}" max="${f.max}" step="${f.step || 1}" value="${esc(val)}"></label>`;
     case 'area': return `<div class="f"><div class="lbrow"><span class="lb">${f.l}</span><button type="button" class="mini" data-act="bold" data-path="${path}" title="Selecione um trecho do texto e clique aqui (ou Ctrl+B)"><b>N</b>&nbsp;Negrito</button></div>${help}<textarea ${a}>${esc(val)}</textarea></div>`;
-    case 'lines': return `<div class="f"><span class="lb">${f.l}</span>${help}<div data-lines="${path}"${f.cor ? ' data-cor' : ''}>${(val?.length ? val : ['']).map((v, i) => lineRow(v, f.cor ? i : null)).join('')}</div><button type="button" class="mini" data-act="line-add">+ Adicionar ${f.item || 'linha'}</button></div>`;
+    case 'lines': return `<div class="f"><span class="lb">${f.l}</span>${help}<div data-lines="${path}">${(val?.length ? val : ['']).map(v => lineRow(v)).join('')}</div><button type="button" class="mini" data-act="line-add">+ Adicionar ${f.item || 'linha'}</button></div>`;
     case 'select': return `<label class="f"><span class="lb">${f.l}</span><select ${a}>${Object.entries(f.o).map(([k, v]) => `<option value="${k}" ${val === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>`;
     case 'check': return `<label class="sw f"><input type="checkbox" ${a} ${val ? 'checked' : ''}><span class="trk" aria-hidden="true"></span><span class="sl"><b>${f.l}</b>${f.h ? `<small>${f.h}</small>` : ''}</span></label>`;
     case 'image': return `<div class="f"><span class="lb">${f.l}</span>${help}${f.enq && val ? enqHTML(path, val) : ''}<div class="img-f">${val && !f.enq ? `<img class="thumb" src="${val}" alt="Miniatura da imagem escolhida">` : ''}<label class="btn">${val ? 'Trocar imagem' : 'Escolher imagem…'}<input type="file" accept="image/*" data-img="${path}" hidden></label>${val ? `<button type="button" class="mini danger" data-act="img-clear" data-path="${path}">Remover</button>` : ''}</div></div>`;
@@ -99,9 +99,9 @@ function fieldHTML(path, f, val) {
   }
   return '';
 }
-/* cor de uma série: "Nome #RRGGBB" no fim da linha, senão a cor padrão da posição */
-const corSerie = (v, i) => (/#[0-9a-fA-F]{6}\s*$/.exec(v || '') || [])[0]?.trim() || (i ? CORES_GRAF[i % CORES_GRAF.length] : corDe(R().meta));
-const lineRow = (v, ci = null) => `<div class="lrow">${ci == null ? '' : `<button type="button" class="cor-bt" data-act="cor-serie" title="Escolher a cor desta série" aria-label="Escolher a cor desta série"><i style="background:${corSerie(v, ci)}"></i></button>`}<input type="text" data-lp value="${esc(v)}" aria-label="Item"><button type="button" class="ico danger" data-act="line-del" title="Remover este item" aria-label="Remover este item">✕</button></div>`;
+/* cor padrão da série i de um gráfico (a 1ª é a cor do setor) */
+const corGraf = i => i % CORES_GRAF.length ? CORES_GRAF[i % CORES_GRAF.length] : corDe(R().meta);
+const lineRow = v => `<div class="lrow"><input type="text" data-lp value="${esc(v)}" aria-label="Item"><button type="button" class="ico danger" data-act="line-del" title="Remover este item" aria-label="Remover este item">✕</button></div>`;
 
 /* Tabela: o modelo continua sendo colunas[] + linhas[] ("a | b | c"), mas o usuário edita numa grade */
 function gridHTML(base, it) {
@@ -127,7 +127,7 @@ function itemHTML(si, ii, it, total) {
     <button type="button" class="ico" data-act="item-up" data-path="${base}" title="Mover para cima" aria-label="Mover bloco para cima" ${ii === 0 ? 'disabled' : ''}>↑</button>
     <button type="button" class="ico" data-act="item-down" data-path="${base}" title="Mover para baixo" aria-label="Mover bloco para baixo" ${ii === total - 1 ? 'disabled' : ''}>↓</button>
     <button type="button" class="ico danger" data-act="del" data-path="${base}" title="Remover este bloco" aria-label="Remover este bloco">✕</button></div>
-    ${campos.map(c => c.t === 'grid' ? gridHTML(base, it) : fieldHTML(`${base}.${c.k}`, c, it[c.k])).join('')}
+    ${campos.map(c => c.t === 'grid' ? gridHTML(base, it) : c.t === 'graf' ? DadosGrafico.html(it, base, i => corGraf(i)) : fieldHTML(`${base}.${c.k}`, c, it[c.k])).join('')}
     ${ii < total - 1 ? fieldHTML(`${base}.lado`, { t: 'check', l: 'Mostrar ao lado do próximo bloco', h: 'Os dois blocos dividem a largura da página, em duas colunas.' }, it.lado) : ''}</div>`;
 }
 function pickerHTML(si) {
@@ -237,6 +237,7 @@ ed.addEventListener('input', e => {
     if (el.type === 'range') el.closest('label').querySelector('.rv').textContent = v;
   }
   setp(R(), el.dataset.path, v);
+  if (/\.modo$/.test(el.dataset.path)) { save(); renderEditor(); refresh(); return; } // pizza ⇄ colunas muda a tabela de dados
   if (/^secoes\.\d+\.titulo$/.test(el.dataset.path)) el.closest('details').querySelector('.tt').textContent = v || 'Tópico sem título';
   if (/^meta\.(sigla|numero)$/.test(el.dataset.path)) { const m = R().meta; tituloBarra(); }
   save(); refresh();
@@ -264,7 +265,7 @@ ed.addEventListener('keydown', e => {
   const el = e.target;
   if (el.hasAttribute('data-lp')) { // Enter = novo item; Backspace em item vazio = remove
     const row = el.closest('.lrow');
-    if (e.key === 'Enter') { e.preventDefault(); const c = row.parentElement; row.insertAdjacentHTML('afterend', lineRow('', c.hasAttribute('data-cor') ? [...c.children].indexOf(row) + 1 : null)); row.nextElementSibling.querySelector('input').focus(); }
+    if (e.key === 'Enter') { e.preventDefault(); row.insertAdjacentHTML('afterend', lineRow('')); row.nextElementSibling.querySelector('input').focus(); }
     else if (e.key === 'Backspace' && !el.value && row.parentElement.children.length > 1) { e.preventDefault(); const prev = row.previousElementSibling || row.nextElementSibling; row.remove(); const pi = prev.querySelector('input'); pi.focus(); pi.dispatchEvent(new Event('input', { bubbles: true })); }
   } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && el.tagName === 'TEXTAREA') { e.preventDefault(); negrito(el); }
 });
@@ -344,14 +345,8 @@ document.addEventListener('click', e => {
         aoCancelar() { Object.assign(m, antes); renderEditor(); renderPreview(); },
       });
     }
-    case 'cor-serie': {
-      const row = b.closest('.lrow'), inp = row.querySelector('[data-lp]'), i = [...row.parentElement.children].indexOf(row), orig = inp.value;
-      const nome = orig.replace(/\s*#[0-9a-fA-F]{6}\s*$/, '').trim() || `Série ${i + 1}`;
-      const pinta = v => { inp.value = v; b.firstElementChild.style.background = corSerie(v, i); inp.dispatchEvent(new Event('input', { bubbles: true })); };
-      return RodaCores.abrir(b, corSerie(orig, i), { aoMudar: h => pinta(`${nome} ${h}`), aoCancelar: () => pinta(orig) });
-    }
     case 'bold': return negrito(ed.querySelector(`textarea[data-path="${p}"]`));
-    case 'line-add': { const c = b.previousElementSibling; c.insertAdjacentHTML('beforeend', lineRow('', c.hasAttribute('data-cor') ? c.children.length : null)); c.lastElementChild.querySelector('input').focus(); return; }
+    case 'line-add': { const c = b.previousElementSibling; c.insertAdjacentHTML('beforeend', lineRow('')); c.lastElementChild.querySelector('input').focus(); return; }
     case 'line-del': { const row = b.closest('.lrow'), c = row.parentElement; if (c.children.length > 1) { const nxt = row.nextElementSibling || row.previousElementSibling; row.remove(); nxt.querySelector('input').focus(); } else row.querySelector('input').value = ''; c.querySelector('[data-lp]').dispatchEvent(new Event('input', { bubbles: true })); return; }
     case 'g-addrow': case 'g-addcol': case 'g-delrow': case 'g-delcol': {
       const t = b.closest('[data-grid]') || ed.querySelector(`[data-grid="${p}"]`); const base = t.dataset.grid; const g = gridRead(t); const i = +b.dataset.i;
@@ -395,6 +390,9 @@ function irAoTrecho(alvo) {
   else return;
   save(); renderEditor({ top: !blk }); irPara('edit');
 }
+
+/* Dados dos gráficos em forma de planilha (grafico-dados.js) */
+DadosGrafico.ligar(ed, { item: p => getp(R(), p), mudou: () => { save(); refresh(); }, corPadrao: (it, i) => corGraf(i), antesDeRemover: snapshot });
 
 /* Edição direta: clicar no texto da página e digitar ali mesmo (o painel ao lado acompanha) */
 const celulaDe = el => { const it = getp(R(), el.dataset.ed), [i, j] = el.dataset.cell.split('.').map(Number); return { it, i, j }; };

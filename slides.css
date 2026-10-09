@@ -1,6 +1,7 @@
 /* Slides 1920x1080 — as posições vêm de slides.js; aqui só o básico das "ops" e do editor de apresentações */
 .sld{position:relative;width:1920px;height:1080px;overflow:hidden;background:#fff;transform-origin:0 0}
 .sld .o{position:absolute}
+.sld svg.o{pointer-events:none} /* formas de fundo não roubam o clique dos textos */
 .sld .ot{box-sizing:border-box;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
 .sld .ot b{font-weight:700;font-size:inherit;font-family:inherit;display:inline}
 .sld .ot div{text-align:inherit}
@@ -66,3 +67,9 @@ body.deck #toolbar .mini{min-width:44px}
   body.deck #strip,body.deck #form,body.deck #show{display:none!important}
 }
 .home-h2{margin-top:24px}
+
+/* slide de conteúdo livre */
+.livre-tip{display:flex;flex-direction:column;gap:8px;align-items:flex-start;margin:6px 0 16px}
+.livre-tip span{font-size:13.5px;color:var(--muted)}
+#form .bloco-sl .chk{margin-top:4px}
+#form .picker-g{grid-template-columns:1fr 1fr}

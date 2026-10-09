@@ -67,8 +67,6 @@ function desenharLista() { $('strip-list').innerHTML = D().slides.map((s, i) => 
 function atualizarMiniatura() { const el = $('strip-list').children[sel]; if (el) el.outerHTML = itemHTML(S(), sel); }
 
 /* ---- formulário ---- */
-/* cor de uma série: "Nome #RRGGBB" no fim da linha, senão a da paleta do tema */
-const corSerie = (v, i) => (/#[0-9a-fA-F]{6}\s*$/.exec(v || '') || [])[0]?.trim() || temaDe(D(), S()).serie[i % 6];
 const corBt = (alvo, cor) => `<button type="button" class="cor-bt" data-act="cor-tema" data-alvo="${alvo}" title="Escolher a cor na roda de cores" aria-label="Escolher a cor na roda de cores"><i style="background:${cor}"></i></button>`;
 const OPC_PERS = v => `<option value="pers"${v === 'pers' ? ' selected' : ''}>Outra cor (roda de cores)…</option>`;
 const opts = o => Object.entries(o).map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join('');
@@ -81,7 +79,7 @@ function campoHTML(path, c, val) {
     case 'check': return `<label class="chk"><input type="checkbox" data-p="${path}" ${val ? 'checked' : ''}> ${esc(c.l)}</label>`;
     case 'select': return `<label class="f">${lab}${aj}${selHTML(path, c.o, val)}</label>`;
     case 'image': return `<div class="f">${lab}${aj}<div class="f-img">${val ? `<img src="${val}" alt="">` : ''}<button type="button" class="mini" data-act="img" data-p="${path}">${val ? 'Trocar imagem' : 'Escolher imagem'}</button>${val ? `<button type="button" class="mini danger" data-act="img-clear" data-p="${path}">Remover</button>` : ''}</div></div>`;
-    case 'lines': return `<div class="f">${lab}${aj}${(val || []).map((v, i) => `<div class="lrow">${c.cor ? `<button type="button" class="cor-bt" data-act="cor-serie" data-p="${path}" data-i="${i}" title="Escolher a cor desta série" aria-label="Escolher a cor desta série"><i style="background:${corSerie(v, i)}"></i></button>` : ''}<input type="text" data-p="${path}.${i}" value="${esc(v)}" aria-label="${esc(c.item || 'Item')}"><button type="button" class="ico" data-act="line-up" data-p="${path}" data-i="${i}" title="Subir" aria-label="Subir">↑</button><button type="button" class="ico danger" data-act="line-del" data-p="${path}" data-i="${i}" title="Remover" aria-label="Remover">✕</button></div>`).join('')}${c.max && (val || []).length >= c.max ? '' : `<button type="button" class="mini" data-act="line-add" data-p="${path}">+ Adicionar ${esc(c.item || 'item')}</button>`}</div>`;
+    case 'lines': return `<div class="f">${lab}${aj}${(val || []).map((v, i) => `<div class="lrow"><input type="text" data-p="${path}.${i}" value="${esc(v)}" aria-label="${esc(c.item || 'Item')}"><button type="button" class="ico" data-act="line-up" data-p="${path}" data-i="${i}" title="Subir" aria-label="Subir">↑</button><button type="button" class="ico danger" data-act="line-del" data-p="${path}" data-i="${i}" title="Remover" aria-label="Remover">✕</button></div>`).join('')}${c.max && (val || []).length >= c.max ? '' : `<button type="button" class="mini" data-act="line-add" data-p="${path}">+ Adicionar ${esc(c.item || 'item')}</button>`}</div>`;
     case 'list': return `<div class="f">${lab}${aj}${(val || []).map((it, i) => `<div class="sub"><div class="sub-h"><span>${esc(c.item || 'Item')} ${i + 1}</span><span><button type="button" class="ico" data-act="list-up" data-p="${path}" data-i="${i}" aria-label="Subir">↑</button><button type="button" class="ico danger" data-act="list-del" data-p="${path}" data-i="${i}" aria-label="Remover">✕</button></span></div>${c.sub.map(sc => campoHTML(`${path}.${i}.${sc.k}`, sc, it[sc.k])).join('')}</div>`).join('')}${c.max && (val || []).length >= c.max ? '' : `<button type="button" class="mini" data-act="list-add" data-p="${path}" data-k="${c.k}">+ Adicionar ${esc(c.item || 'item')}</button>`}</div>`;
     case 'botao': return `<button type="button" class="btn-f" data-act="${c.a}">${esc(c.l)}</button>`;
   }
@@ -90,6 +88,23 @@ function campoHTML(path, c, val) {
 function gridHTML(s, base) {
   const cols = s.colunas || [], rows = (s.linhas || []).map(l => { const p = l.split('|').map(x => x.trim()); while (p.length < cols.length) p.push(''); return p; });
   return `<div class="f"><span class="lb">Tabela</span><span class="help">Cada linha tem uma célula por coluna.</span><div class="grid-wrap"><table class="grid" data-grid="${base}"><thead><tr>${cols.map((c, j) => `<th><div class="gh"><input type="text" data-gc="${j}" value="${esc(c)}" aria-label="Título da coluna ${j + 1}"><button type="button" class="ico danger" data-act="col-del" data-j="${j}" title="Remover coluna" aria-label="Remover coluna">✕</button></div></th>`).join('')}<th class="act"></th></tr></thead><tbody>${rows.map((r, i) => `<tr>${cols.map((_, j) => `<td><textarea data-gr="${i}" data-gj="${j}" rows="2">${esc(r[j] || '')}</textarea></td>`).join('')}<td class="act"><button type="button" class="ico danger" data-act="row-del" data-i="${i}" title="Remover linha" aria-label="Remover linha">✕</button></td></tr>`).join('')}</tbody></table></div><div class="row"><button type="button" class="mini" data-act="row-add">+ Linha</button><button type="button" class="mini" data-act="col-add">+ Coluna</button></div></div>`;
+}
+/* slide livre: um cartão por bloco, como os tópicos do relatório */
+let seletorBlocos = false, focoBloco = null;
+const campoBloco = (b, base, d, s) => c => c.t === 'grid' ? gridHTML(b, base) : c.t === 'graf' ? DadosGrafico.html(b, base, i => temaDe(d, s).serie[i % 6]) : campoHTML(`${base}.${c.k}`, c, b[c.k]);
+function blocosHTML(d, s, base) {
+  const bl = s.blocos || [], n = bl.length;
+  const cartao = (b, i) => { const T = BLOCOS_SL[b.tipo], bb = `${base}.blocos.${i}`; return `<div class="item bloco-sl" data-bl="${i}"><div class="item-h"><span class="ic" aria-hidden="true">${T.ic}</span><span>${esc(T.nome)}</span><span class="sp"></span>
+    <button type="button" class="ico" data-act="bl-up" data-i="${i}" title="Mover para cima" aria-label="Mover bloco para cima" ${i ? '' : 'disabled'}>↑</button>
+    <button type="button" class="ico" data-act="bl-dn" data-i="${i}" title="Mover para baixo" aria-label="Mover bloco para baixo" ${i < n - 1 ? '' : 'disabled'}>↓</button>
+    <button type="button" class="ico" data-act="bl-dup" data-i="${i}" title="Duplicar bloco" aria-label="Duplicar bloco">⧉</button>
+    <button type="button" class="ico danger" data-act="bl-del" data-i="${i}" title="Remover bloco" aria-label="Remover bloco">✕</button></div>
+    ${T.campos.filter(c => !c.se || c.se(b)).map(campoBloco(b, bb, d, s)).join('')}
+    ${i < n - 1 ? `<label class="chk"><input type="checkbox" data-p="${bb}.lado" ${b.lado ? 'checked' : ''} data-rr> Colocar ao lado do próximo bloco (duas colunas)</label>` : ''}</div>`; };
+  const picker = `<div class="picker"><div class="picker-h"><b>O que você quer adicionar?</b><button type="button" class="mini" data-act="bl-picker-fechar">Cancelar</button></div><div class="picker-g">${ORDEM_BLOCOS.map(k => `<button type="button" class="pk" data-act="bl-add" data-tipo="${k}"><span class="ic" aria-hidden="true">${BLOCOS_SL[k].ic}</span><b>${esc(BLOCOS_SL[k].nome)}</b><small>${esc(BLOCOS_SL[k].desc)}</small></button>`).join('')}</div></div>`;
+  return `<div class="blocos-t">Conteúdo do slide</div><p class="help">O slide divide o espaço entre os blocos sozinho. Clique num texto do slide para editá-lo ali mesmo.</p>
+    ${n ? bl.map(cartao).join('') : '<p class="vazio-s">Este slide ainda não tem conteúdo.</p>'}
+    ${seletorBlocos ? picker : '<button type="button" class="add-big" data-act="bl-picker">+ Adicionar conteúdo</button>'}`;
 }
 function desenharForm() {
   const d = D(), s = S(), f = $('form'); if (!s) { f.innerHTML = ''; return; }
@@ -101,8 +116,10 @@ function desenharForm() {
   <div class="card"><div class="f-t"><b>Slide ${sel + 1} · ${esc(L.nome)}</b></div>
     <label class="f"><span class="lb">Tipo de slide</span><select data-tipo>${ORDEM_LAYOUTS.map(k => `<option value="${k}"${s.tipo === k ? ' selected' : ''}>${esc(LAYOUTS[k].nome)}</option>`).join('')}</select></label>
     <div class="f"><label class="lb" for="sel-tema-sl">Cores deste slide</label><div class="cor-linha"><select id="sel-tema-sl" data-p="${base}.tema" data-rr><option value="">Mesmas da apresentação</option>${Object.entries(TEMAS_SL).map(([k, t]) => `<option value="${k}"${s.tema === k ? ' selected' : ''}>${esc(t.nome)}</option>`).join('')}${OPC_PERS(s.tema)}</select>${corBt('slide', temaDe(d, s).main)}</div></div>
-    ${L.campos.filter(c => !c.se || c.se(s)).map(c => c.t === 'grid' ? gridHTML(s, base) : campoHTML(`${base}.${c.k}`, c, s[c.k])).join('')}
+    ${L.campos.filter(c => !c.se || c.se(s)).map(c => c.t === 'grid' ? gridHTML(s, base) : c.t === 'graf' ? DadosGrafico.html(s, base, i => temaDe(d, s).serie[i % 6]) : campoHTML(`${base}.${c.k}`, c, s[c.k])).join('')}
+    ${s.tipo === 'livre' ? blocosHTML(d, s, base) : ['capa', 'divisor'].includes(s.tipo) ? '' : `<div class="tip livre-tip"><b>Quer pôr mais coisas neste slide?</b><span>Transforme-o em <b>conteúdo livre</b>: o que já está aqui vira blocos, e você pode adicionar textos, gráficos, tabelas, indicadores e imagens.</span><button type="button" class="mini primary" data-act="para-livre">Transformar em conteúdo livre</button></div>`}
     <label class="f"><span class="lbrow"><span class="lb">Anotações do apresentador (opcional)</span></span><span class="help">Vão para as anotações do PowerPoint; não aparecem no slide.</span><textarea data-p="${base}.notas" rows="3">${esc(s.notas || '')}</textarea></label></div>`;
+  if (focoBloco != null) { const i = focoBloco; focoBloco = null; requestAnimationFrame(() => { const c = f.querySelector(`[data-bl="${i}"]`); if (!c) return; c.scrollIntoView({ block: 'center', behavior: 'smooth' }); c.querySelector('input[type=text],textarea')?.focus({ preventScroll: true }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 1700); }); }
 }
 function renderTudo() { desenharLista(); desenharPalco(); desenharForm(); }
 
@@ -120,6 +137,7 @@ form.addEventListener('input', e => {
 form.addEventListener('change', e => {
   const el = e.target;
   if (el.hasAttribute('data-tipo')) { // trocar o modelo mantém os campos que têm o mesmo nome
+    if (el.value === 'livre') return converterLivre();
     snapshot(); const s = S(), novo = { ...LAYOUTS[el.value].novo() }; Object.keys(novo).forEach(k => { if (k in s && typeof s[k] === typeof novo[k] && (s[k] !== '' || typeof s[k] !== 'string')) novo[k] = s[k]; });
     const antigo = { id: s.id, tema: s.tema, notas: s.notas }; D().slides[sel] = { ...novo, ...antigo, tipo: el.value }; save(); renderTudo(); return;
   }
@@ -127,7 +145,7 @@ form.addEventListener('change', e => {
   else if (el.type === 'file') { /* tratado abaixo */ }
 });
 function gridLer(t) {
-  const s = S(), cols = [...t.querySelectorAll('[data-gc]')].map(i => i.value), rows = {};
+  const s = getp(D(), t.dataset.grid), cols = [...t.querySelectorAll('[data-gc]')].map(i => i.value), rows = {};
   t.querySelectorAll('[data-gr]').forEach(i => { (rows[i.dataset.gr] ||= [])[+i.dataset.gj] = i.value; });
   s.colunas = cols; s.linhas = Object.keys(rows).sort((a, b) => a - b).map(k => rows[k].map(c => String(c ?? '').replace(/\|/g, '/').replace(/\n/g, ' ')).join(' | '));
 }
@@ -157,13 +175,13 @@ const direto = EdicaoDireta.ligar({
   gravar(el, v) {
     const s = S(), path = el.dataset.ed;
     if (el.dataset.cell != null) {
-      const [p, j] = celula(s, el); while (p.length < (s.colunas || []).length) p.push('');
+      const [p, j] = celula(s, el), dono = getp(s, path.replace(/\.?linhas\.\d+$/, '')) || s; while (p.length < (dono.colunas || []).length) p.push('');
       p[j] = String(v).replace(/\|/g, '/'); setp(s, path, p.join(' | '));
-      const [, i] = path.split('.'), c = form.querySelector(`table.grid [data-gr="${i}"][data-gj="${j}"]`); if (c) c.value = p[j];
+      const i = path.split('.').pop(), base = path.replace(/\.?linhas\.\d+$/, ''), c = form.querySelector(`table.grid[data-grid="slides.${sel}${base ? '.' + base : ''}"] [data-gr="${i}"][data-gj="${j}"]`); if (c) c.value = p[j];
     } else {
       setp(s, path, v);
       const c = form.querySelector(`[data-p="slides.${sel}.${path}"]`); if (c && typeof v === 'string') c.value = v;
-      const g = /^colunas\.(\d+)$/.exec(path); if (g) { const h = form.querySelector(`table.grid [data-gc="${g[1]}"]`); if (h) h.value = v; }
+      const g = /^(?:(.*)\.)?colunas\.(\d+)$/.exec(path); if (g) { const h = form.querySelector(`table.grid[data-grid="slides.${sel}${g[1] ? '.' + g[1] : ''}"] [data-gc="${g[2]}"]`); if (h) h.value = v; }
     }
     save(); clearTimeout(tMini); tMini = setTimeout(atualizarMiniatura, 300);
   },
@@ -177,7 +195,11 @@ const direto = EdicaoDireta.ligar({
 /* leva ao campo correspondente do formulário (textos montados a partir de vários campos, como "nº 02/26 | Órgão") */
 function focarCampo(path) {
   if (matchMedia('(max-width:900px)').matches) { document.body.dataset.v = 'edit'; document.querySelectorAll('#mtabs button').forEach(x => x.classList.toggle('on', x.dataset.v === 'edit')); }
-  const base = `slides.${sel}.`, alvo = form.querySelector(`[data-p="${base}${path}"]`) || form.querySelector(`[data-p^="${base}${path.split('.')[0]}"]`) || form.querySelector(`[data-grid]`);
+  const base = `slides.${sel}.`, ps = path.split('.'); let alvo = form.querySelector(`[data-p="${base}${path}"]`);
+  const gm = /^(?:(.*)\.)?(dados|series)(?:\.(\d+))?$/.exec(path);
+  if (!alvo && gm) { const g = form.querySelector(`[data-graf="slides.${sel}${gm[1] ? '.' + gm[1] : ''}"]`); if (g) alvo = gm[2] === 'series' ? g.querySelectorAll('[data-gds]')[+gm[3] || 0] || g.querySelector('[data-gdn]') : g.querySelector(`tbody tr:nth-child(${(+gm[3] || 0) + 1}) [data-gdv]`) || g.querySelector('[data-gdn]'); }
+  for (let n = ps.length - 1; !alvo && n > 0; n--) alvo = form.querySelector(`[data-p^="${base}${ps.slice(0, n).join('.')}."]`);
+  alvo ||= form.querySelector('[data-grid]');
   if (!alvo) return;
   alvo.scrollIntoView({ block: 'center', behavior: 'smooth' }); alvo.focus({ preventScroll: true });
   const f = alvo.closest('.f, .chk, .sub') || alvo; f.classList.remove('flash'); void f.offsetWidth; f.classList.add('flash'); setTimeout(() => f.classList.remove('flash'), 1700);
@@ -187,6 +209,17 @@ $('stage-box').addEventListener('click', e => {
   const f = e.target.closest('[data-edf]'); if (f) return focarCampo(f.dataset.edf);
   const im = e.target.closest('[data-img]'); if (im) { imgPath = `slides.${sel}.${im.dataset.img}`; arq.click(); }
 });
+
+/* ---- dados dos gráficos em forma de planilha (grafico-dados.js) ---- */
+DadosGrafico.ligar(form, { item: p => getp(D(), p), mudou: () => { save(); refresh(); }, corPadrao: (it, i) => temaDe(D(), S()).serie[i % 6], antesDeRemover: snapshot });
+
+/* ---- transformar um slide de modelo fixo em conteúdo livre ---- */
+function converterLivre() {
+  const s = S(); if (s.tipo === 'livre') return;
+  snapshot(); const n = paraLivre(s);
+  D().slides[sel] = { id: s.id, tipo: 'livre', tema: s.tema, cor: s.cor, notas: s.notas || '', ...n }; save(); renderTudo();
+  toast('Slide transformado em conteúdo livre. Agora é só adicionar blocos.', { rotulo: 'Desfazer', fn: desfazer });
+}
 
 /* ---- roda de cores: tema da apresentação / do slide ---- */
 function abrirCorTema(alvo, temaAntes) {
@@ -218,24 +251,30 @@ document.addEventListener('click', async e => {
     }
     case 'undo': return desfazer();
     case 'cor-tema': return abrirCorTema(b.dataset.alvo);
-    case 'cor-serie': {
-      const arr = getp(d, p), orig = arr[i] ?? '', nome = orig.replace(/\s*#[0-9a-fA-F]{6}\s*$/, '').trim() || `Série ${i + 1}`, inp = form.querySelector(`[data-p="${p}.${i}"]`);
-      const pinta = v => { arr[i] = v; if (inp) inp.value = v; b.firstElementChild.style.background = corSerie(v, i); desenharPalco(); atualizarMiniatura(); };
-      return RodaCores.abrir(b, corSerie(orig, i), { aoMudar: h => pinta(`${nome} ${h}`), aoConfirmar: () => save(), aoCancelar: () => pinta(orig) });
-    }
     case 'negrito': return negrito(b.closest('label').querySelector('textarea'));
     case 'img': imgPath = p; return arq.click();
     case 'img-clear': setp(d, p, ''); save(); return renderTudo();
     case 'line-add': { getp(d, p).push(''); save(); renderTudo(); const l = form.querySelectorAll(`[data-p^="${p}."]`); l[l.length - 1]?.focus(); return; }
     case 'line-del': snapshot(); getp(d, p).splice(i, 1); save(); return renderTudo();
     case 'line-up': if (swap(getp(d, p), i, -1)) { save(); renderTudo(); } return;
-    case 'list-add': { const c = LAYOUTS[s.tipo].campos.find(x => x.k === b.dataset.k); getp(d, p).push(c.novo()); save(); renderTudo(); return; }
+    case 'list-add': { const mb = /\.blocos\.(\d+)\./.exec(p), campos = mb ? BLOCOS_SL[s.blocos[+mb[1]].tipo].campos : LAYOUTS[s.tipo].campos, c = campos.find(x => x.k === b.dataset.k); getp(d, p).push(c.novo()); save(); renderTudo(); return; }
     case 'list-del': snapshot(); getp(d, p).splice(i, 1); save(); return renderTudo();
     case 'list-up': if (swap(getp(d, p), i, -1)) { save(); renderTudo(); } return;
-    case 'row-add': s.linhas.push(s.colunas.map(() => '').join(' | ')); save(); return renderTudo();
-    case 'row-del': snapshot(); s.linhas.splice(i, 1); save(); return renderTudo();
-    case 'col-add': gridLer(form.querySelector('table.grid')); s.colunas.push('Coluna ' + (s.colunas.length + 1)); s.linhas = s.linhas.map(l => l + ' | '); save(); return renderTudo();
-    case 'col-del': { snapshot(); gridLer(form.querySelector('table.grid')); const j = +b.dataset.j; if (s.colunas.length < 2) return toast('A tabela precisa de pelo menos uma coluna.'); s.colunas.splice(j, 1); s.linhas = s.linhas.map(l => l.split(' | ').filter((_, k) => k !== j).join(' | ')); save(); return renderTudo(); }
+    case 'row-add': case 'row-del': case 'col-add': case 'col-del': {
+      const tb = b.closest('.f').querySelector('table[data-grid]'), o = getp(d, tb.dataset.grid); gridLer(tb);
+      if (a === 'row-add') o.linhas.push(o.colunas.map(() => '').join(' | '));
+      else if (a === 'col-add') { o.colunas.push('Coluna ' + (o.colunas.length + 1)); o.linhas = o.linhas.map(l => l + ' | '); }
+      else if (a === 'row-del') { snapshot(); o.linhas.splice(i, 1); }
+      else { if (o.colunas.length < 2) return toast('A tabela precisa de pelo menos uma coluna.'); snapshot(); const j = +b.dataset.j; o.colunas.splice(j, 1); o.linhas = o.linhas.map(l => l.split('|').map(x => x.trim()).filter((_, k) => k !== j).join(' | ')); }
+      save(); return renderTudo();
+    }
+    case 'para-livre': return converterLivre();
+    case 'bl-picker': seletorBlocos = true; desenharForm(); form.querySelector('.picker')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return;
+    case 'bl-picker-fechar': seletorBlocos = false; return desenharForm();
+    case 'bl-add': { snapshot(); (s.blocos ||= []).push(novoBloco(b.dataset.tipo)); seletorBlocos = false; focoBloco = s.blocos.length - 1; save(); return renderTudo(); }
+    case 'bl-up': case 'bl-dn': { snapshot(); if (swap(s.blocos, i, a === 'bl-up' ? -1 : 1)) { focoBloco = i + (a === 'bl-up' ? -1 : 1); save(); renderTudo(); } return; }
+    case 'bl-dup': { snapshot(); const c = JSON.parse(JSON.stringify(s.blocos[i])); c.id = uid(); s.blocos.splice(i + 1, 0, c); focoBloco = i + 1; save(); renderTudo(); return toast('Bloco duplicado.'); }
+    case 'bl-del': { snapshot(); s.blocos.splice(i, 1); save(); renderTudo(); return toast('Bloco removido.', { rotulo: 'Desfazer', fn: desfazer }); }
     case 'agenda-auto': { const t = d.slides.filter(x => x.tipo === 'divisor' && x.titulo.trim()).map(x => x.titulo.replace(/\s*\n\s*/g, ' ')); if (!t.length) return toast('Nenhum divisor de seção na apresentação ainda.'); snapshot(); s.itens = t; save(); return renderTudo(); }
     case 'trazer': document.getElementById('menu-deck').open = false; return abrirTrazer();
     case 'trazer-go': return trazerConfirmar();
@@ -260,7 +299,7 @@ async function baixarPPTX(b) {
 }
 
 /* ---- seleção, ordenação por arrastar ---- */
-function irPara(n) { if (n < 0 || n >= D().slides.length) return; sel = n; renderTudo(); $('strip-list').children[sel]?.scrollIntoView({ block: 'nearest' }); }
+function irPara(n) { if (n < 0 || n >= D().slides.length) return; if (n !== sel) seletorBlocos = false; sel = n; renderTudo(); $('strip-list').children[sel]?.scrollIntoView({ block: 'nearest' }); }
 $('strip-list').addEventListener('click', e => { const it = e.target.closest('.sitem'); if (it && !e.target.closest('button')) irPara(+it.dataset.i); });
 let arrastando = null;
 $('strip-list').addEventListener('dragstart', e => { const it = e.target.closest('.sitem'); if (!it) return; arrastando = +it.dataset.i; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(arrastando)); });
