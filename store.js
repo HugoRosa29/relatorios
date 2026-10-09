@@ -20,6 +20,17 @@ function fotoImagem(src, pos, clip) {
 
 const TEMAS = { dourado: 'Dourado (COTIN)', verde: 'Verde (Controladoria / DIGER)', azul: 'Azul (CORED)', aco: 'Azul-aço (DICOP)' };
 const COR = { dourado: '#D0A010', verde: '#276645', azul: '#004A80', aco: '#4D82A4' };
+/* cor personalizada (roda de cores): tema 'pers' + meta.cor */
+const corDe = m => (m.tema === 'pers' && m.cor) || COR[m.tema] || '#999';
+const nomeTema = m => m.tema === 'pers' ? 'Cor personalizada' : TEMAS[m.tema] || '';
+const misturaCor = (a, t, b = '#FFFFFF') => { const c = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)), x = c(a), y = c(b); return '#' + x.map((v, i) => Math.round(v * t + y[i] * (1 - t)).toString(16).padStart(2, '0')).join('').toUpperCase(); };
+const lumCor = h => { const [r, g, b] = [1, 3, 5].map(i => { const v = parseInt(h.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+/* variáveis CSS da página para o tema personalizado (os temas fixos vêm do report.css) */
+function varsTema(c) {
+  if (!c || c.tema !== 'pers' || !c.cor) return '';
+  const acc = lumCor(c.cor) > .45 ? c.cor : misturaCor(c.cor, .85);
+  return `--main:${c.cor};--accent:${acc};--head:${lumCor(c.cor) < .3 ? c.cor : '#202020'};--kpi-fg:${lumCor(acc) > .4 ? '#202020' : '#fff'};--tint:${misturaCor(c.cor, .45)}`;
+}
 
 const novoRelatorio = () => ({
   id: uid(),
@@ -28,7 +39,7 @@ const novoRelatorio = () => ({
   secoes: [],
 });
 
-let state = { reports: [] };
+let state = { reports: [], decks: [] };
 let atualId = null; // relatório aberto no editor (vem da URL)
 
 /* Armazenamento: IndexedDB (aguenta relatórios com muitas imagens); localStorage só como reserva */
@@ -52,7 +63,7 @@ async function lerEstado() {
   }
 }
 async function gravarEstado() {
-  const dados = { reports: state.reports };
+  const dados = { reports: state.reports, decks: state.decks };
   try {
     const db = await abrirDB();
     return await new Promise(ok => {
@@ -64,6 +75,7 @@ async function gravarEstado() {
   }
 }
 function normalizar(s) {
+  s.decks ||= [];
   s.reports.forEach(r => { if (!r.meta.sumarioPadrao) { r.meta.sumario = true; r.meta.sumarioPadrao = true; } r.secoes ||= []; });
   return s;
 }
@@ -73,7 +85,7 @@ async function carregar() {
   if (!s) {
     try { const o = JSON.parse(localStorage.getItem(KEY)); if (o && Array.isArray(o.reports)) { s = o; migrar = true; } } catch (e) {}
   }
-  if (!s) { s = { reports: [exemplo()] }; migrar = true; }
+  if (!s) { s = { reports: [exemplo()], decks: [] }; migrar = true; }
   state = normalizar(s);
   if (migrar && await gravarEstado()) { try { localStorage.removeItem(KEY); } catch (e) {} }
   return state;
@@ -97,9 +109,10 @@ function aoMudarEmOutraAba(fn) {
   if (canal) canal.onmessage = async () => { const s = await lerEstado(); if (s) { state = normalizar(s); fn(); } };
 }
 const R = () => state.reports.find(r => r.id === atualId);
+const D = () => state.decks.find(d => d.id === atualId);
 
 /* Copia um tópico de outro relatório, com ids novos (o original não é afetado) */
-const ctxDe = x => ({ tema: x.meta.tema, sigla: x.meta.sigla, numero: x.meta.numero });
+const ctxDe = x => ({ tema: x.meta.tema, cor: x.meta.cor, sigla: x.meta.sigla, numero: x.meta.numero });
 function clonarSecao(s, origem, ctx) {
   const c = JSON.parse(JSON.stringify(s));
   c.id = uid(); delete c._aberta; c.origem = origem; c.ctx = ctx; // ctx: tema e cabeçalho do relatório de origem

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Editar apresentação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=8">
+<link rel="stylesheet" href="slides.css?v=2">
+</head>
+<body class="deck">
+<header id="appbar">
+  <a class="bar-btn back" href="index.html" title="Voltar para a lista">← Todos</a>
+  <span class="rel-nome" id="deck-nome"></span>
+  <details class="menu" id="menu-deck">
+    <summary class="bar-btn">Opções ▾</summary>
+    <div class="menu-pop">
+      <button class="mi" data-act="trazer"><b>Criar slides a partir de um relatório</b><small>Gera um resumo com os pontos principais, ou um slide por tópico, no fim desta apresentação</small></button>
+      <button class="mi" data-act="deck-dup"><b>Duplicar esta apresentação</b><small>Ótimo para começar o próximo trimestre aproveitando o que já existe</small></button>
+      <hr>
+      <button class="mi" data-act="exportar"><b>Salvar cópia de segurança</b><small>Baixa um arquivo para guardar ou levar a outro computador</small></button>
+    </div>
+  </details>
+  <span class="spacer"></span>
+  <span id="save-status" class="hide-m" role="status" aria-live="polite"></span>
+  <button id="btn-undo" class="bar-btn" data-act="undo" disabled title="Desfazer a última alteração de estrutura (Ctrl+Z)">Desfazer</button>
+  <button class="bar-btn" data-act="apresentar" title="Mostra os slides em tela cheia">▶ Apresentar</button>
+  <button class="primary" data-act="pptx" title="Gera o arquivo PowerPoint (.pptx)">Baixar PowerPoint</button>
+</header>
+
+<nav id="mtabs" aria-label="Alternar tela">
+  <button data-act="vista" data-v="lista">Slides</button>
+  <button data-act="vista" data-v="prev" class="on">Ver slide</button>
+  <button data-act="vista" data-v="edit">Editar</button>
+</nav>
+
+<div id="app" class="slides-app">
+  <aside id="strip" aria-label="Lista de slides">
+    <div id="strip-list"></div>
+    <button class="primary add-slide" data-act="novo-slide">+ Novo slide</button>
+  </aside>
+  <main id="stage-wrap">
+    <div id="toolbar">
+      <span id="page-count"></span>
+      <span class="hint-t">Clique num texto do slide para editar ali mesmo; clique numa imagem para trocá-la.</span>
+      <button class="mini" data-act="prev" aria-label="Slide anterior">←</button>
+      <button class="mini" data-act="next" aria-label="Próximo slide">→</button>
+    </div>
+    <div id="stage"><div id="stage-box"></div></div>
+    <p id="stage-aviso" class="aviso" hidden></p>
+  </main>
+  <aside id="form" aria-label="Edição do slide"></aside>
+</div>
+
+<div id="toasts"></div>
+<div id="show" hidden><div id="show-box"></div><button class="mini" data-act="show-sair" aria-label="Sair da apresentação">✕ Sair (Esc)</button></div>
+
+<dialog id="dlg-novo" class="wide" aria-labelledby="dlg-novo-t">
+  <h2 id="dlg-novo-t">Escolha o modelo do slide</h2>
+  <div id="novo-grid" class="novo-grid"></div>
+  <div class="dlg-b"><button data-act="dlg-close">Cancelar</button></div>
+</dialog>
+
+<dialog id="dlg-trazer" class="wide" aria-labelledby="dlg-trazer-t">
+  <h2 id="dlg-trazer-t">Criar slides a partir de um relatório</h2>
+  <p class="jn-help">Escolha o relatório. Cada tópico vira um ou mais slides (texto, indicadores, tabela ou gráfico), com as cores da área. Depois é só ajustar.</p>
+  <div id="tz-lista" class="tz-lista"></div>
+  <label class="f"><span class="lb">O que criar</span><select id="tz-modo"><option value="resumo">Resumo com os pontos mais importantes (poucos slides)</option><option value="completo">Todos os tópicos (um ou mais slides por tópico)</option></select><span class="help">O resumo escolhe as frases com mais números e resultados e reúne os principais indicadores. Revise antes de apresentar.</span></label>
+  <div class="dlg-b">
+    <button data-act="dlg-close">Cancelar</button>
+    <button class="primary" id="tz-go" data-act="trazer-go" disabled>Criar slides</button>
+  </div>
+</dialog>
+
+<script src="assets/pptxgen.bundle.js"></script>
+<script src="assets/slide-assets.js"></script>
+<script src="store.js?v=13"></script>
+<script src="cores.js?v=1"></script>
+<script src="edicao.js?v=1"></script>
+<script src="slides.js?v=2"></script>
+<script src="apresentacao.js?v=2"></script>
+</body>
+</html>

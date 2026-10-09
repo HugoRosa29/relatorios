@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="app.css?v=8">
 <link rel="stylesheet" href="report.css?v=7">
 </head>
 <body>
@@ -46,7 +46,7 @@
     <div id="hist-bar" hidden role="status"><span id="hist-txt"></span><span class="hist-b"><button class="primary mini" id="hist-rest" data-act="hist-restaurar">Restaurar esta versão</button><button class="mini" data-act="hist-sair">Voltar ao relatório atual</button></span></div>
     <div id="toolbar">
       <span id="page-count"></span>
-      <span class="hint-t">Clique em qualquer parte da página para editar aquele trecho.</span>
+      <span class="hint-t">Clique num texto da página para editar ali mesmo; clique fora do texto para abrir o trecho no painel.</span>
       <div class="zoom" role="group" aria-label="Zoom da visualização">
         <button class="mini" data-act="zoom-out" aria-label="Diminuir zoom" title="Diminuir">−</button>
         <span id="zoom-lbl">100%</span>
@@ -101,8 +101,10 @@
 
 <script src="assets/pdf-lib.min.js"></script>
 <script src="assets/shapes.js"></script>
-<script src="store.js?v=9"></script>
+<script src="store.js?v=13"></script>
 <script src="historico.js?v=7"></script>
-<script src="app.js?v=9"></script>
+<script src="cores.js?v=1"></script>
+<script src="edicao.js?v=1"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

@@ -10,7 +10,7 @@ const TIPOS = {
   barra:      { ic: 'BAR', nome: 'Barra de progresso', desc: 'Mostra uma porcentagem, ex.: 100% entregue', campos: [{ k: 'titulo', t: 'text', l: 'Título (opcional)' }, { k: 'percentual', t: 'number', l: 'Porcentagem concluída (0 a 100)', min: 0, max: 100 }, { k: 'legenda', t: 'text', l: 'Texto abaixo da barra', p: 'Ex.: ENTREGUES' }], novo: () => ({ titulo: '', percentual: 100, legenda: '' }) },
   kpis:       { ic: 'KPI', nome: 'Indicadores em destaque', desc: 'Cartões com números grandes, ex.: 99,83%', campos: [{ k: 'horizontal', t: 'check', l: 'Colocar os cartões lado a lado', h: 'Desligado: um cartão embaixo do outro.' }, { k: 'cards', t: 'list', l: 'Cartões', item: 'cartão', novo: () => ({ rotulo: '', valor: '', legenda: '' }), sub: [{ k: 'rotulo', t: 'text', l: 'Nome do indicador', p: 'Ex.: Chamados atendidos' }, { k: 'valor', t: 'text', l: 'Número (ex.: 99,83%)' }, { k: 'legenda', t: 'text', l: 'Observação (opcional)' }] }], novo: () => ({ horizontal: false, cards: [{ rotulo: '', valor: '', legenda: '' }] }) },
   tabela:     { ic: 'TAB', nome: 'Tabela', desc: 'Linhas e colunas, com cabeçalho colorido', campos: [{ k: 'colunas', t: 'grid' }, { k: 'simples', t: 'check', l: 'Primeira coluna sem negrito' }], novo: () => ({ colunas: ['Coluna 1', 'Coluna 2'], linhas: [' | '] }) },
-  grafico:    { ic: 'GRF', nome: 'Gráfico', desc: 'Colunas, barras, barras empilhadas ou pizza, a partir dos números', campos: [{ k: 'titulo', t: 'text', l: 'Título do gráfico (opcional)' }, { k: 'modo', t: 'select', l: 'Tipo de gráfico', o: { colunas: 'Colunas', barras: 'Barras (horizontais)', empilhadas: 'Barras empilhadas', pizza: 'Pizza' } }, { k: 'series', t: 'lines', l: 'Legenda (uma linha por série, na ordem das colunas de números)', item: 'série' }, { k: 'dados', t: 'lines', l: 'Dados (formato: Nome | número | número…)', item: 'linha de dados' }, { k: 'fonte', t: 'text', l: 'Fonte / observação (opcional)' }], novo: () => ({ titulo: '', modo: 'colunas', series: ['Série 1'], dados: ['Item A | 10', 'Item B | 6'], fonte: '' }) },
+  grafico:    { ic: 'GRF', nome: 'Gráfico', desc: 'Colunas, barras, barras empilhadas ou pizza, a partir dos números', campos: [{ k: 'titulo', t: 'text', l: 'Título do gráfico (opcional)' }, { k: 'modo', t: 'select', l: 'Tipo de gráfico', o: { colunas: 'Colunas', barras: 'Barras (horizontais)', empilhadas: 'Barras empilhadas', pizza: 'Pizza' } }, { k: 'series', t: 'lines', l: 'Legenda (uma linha por série, na ordem das colunas de números)', item: 'série', cor: 1, h: 'Clique no quadradinho colorido para escolher a cor da série.' }, { k: 'dados', t: 'lines', l: 'Dados (formato: Nome | número | número…)', item: 'linha de dados' }, { k: 'fonte', t: 'text', l: 'Fonte / observação (opcional)' }], novo: () => ({ titulo: '', modo: 'colunas', series: ['Série 1'], dados: ['Item A | 10', 'Item B | 6'], fonte: '' }) },
   imagem:     { ic: 'IMG', nome: 'Imagem', desc: 'Uma foto ou figura, com legenda opcional', campos: [{ k: 'src', t: 'image', l: 'Imagem' }, { k: 'altura', t: 'range', l: 'Altura da imagem', min: 80, max: 600, step: 10 }, { k: 'sangria', t: 'check', l: 'Usar a largura total da página', h: 'A imagem vai de uma borda à outra, sem margens.' }, { k: 'legenda', t: 'text', l: 'Legenda (opcional)' }], novo: () => ({ src: '', altura: 320, sangria: false, legenda: '' }) },
 };
 
@@ -91,7 +91,7 @@ function fieldHTML(path, f, val) {
     case 'number': return `<label class="f"><span class="lb">${f.l}</span>${help}<input type="number" inputmode="numeric" ${a} value="${esc(val)}"${f.min != null ? ` min="${f.min}" max="${f.max}"` : ''}></label>`;
     case 'range': return `<label class="f"><span class="lb">${f.l}<output class="rv">${esc(val)}</output></span>${help}<input type="range" ${a} min="${f.min}" max="${f.max}" step="${f.step || 1}" value="${esc(val)}"></label>`;
     case 'area': return `<div class="f"><div class="lbrow"><span class="lb">${f.l}</span><button type="button" class="mini" data-act="bold" data-path="${path}" title="Selecione um trecho do texto e clique aqui (ou Ctrl+B)"><b>N</b>&nbsp;Negrito</button></div>${help}<textarea ${a}>${esc(val)}</textarea></div>`;
-    case 'lines': return `<div class="f"><span class="lb">${f.l}</span>${help}<div data-lines="${path}">${(val?.length ? val : ['']).map(lineRow).join('')}</div><button type="button" class="mini" data-act="line-add">+ Adicionar ${f.item || 'linha'}</button></div>`;
+    case 'lines': return `<div class="f"><span class="lb">${f.l}</span>${help}<div data-lines="${path}"${f.cor ? ' data-cor' : ''}>${(val?.length ? val : ['']).map((v, i) => lineRow(v, f.cor ? i : null)).join('')}</div><button type="button" class="mini" data-act="line-add">+ Adicionar ${f.item || 'linha'}</button></div>`;
     case 'select': return `<label class="f"><span class="lb">${f.l}</span><select ${a}>${Object.entries(f.o).map(([k, v]) => `<option value="${k}" ${val === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>`;
     case 'check': return `<label class="sw f"><input type="checkbox" ${a} ${val ? 'checked' : ''}><span class="trk" aria-hidden="true"></span><span class="sl"><b>${f.l}</b>${f.h ? `<small>${f.h}</small>` : ''}</span></label>`;
     case 'image': return `<div class="f"><span class="lb">${f.l}</span>${help}${f.enq && val ? enqHTML(path, val) : ''}<div class="img-f">${val && !f.enq ? `<img class="thumb" src="${val}" alt="Miniatura da imagem escolhida">` : ''}<label class="btn">${val ? 'Trocar imagem' : 'Escolher imagem…'}<input type="file" accept="image/*" data-img="${path}" hidden></label>${val ? `<button type="button" class="mini danger" data-act="img-clear" data-path="${path}">Remover</button>` : ''}</div></div>`;
@@ -99,7 +99,9 @@ function fieldHTML(path, f, val) {
   }
   return '';
 }
-const lineRow = v => `<div class="lrow"><input type="text" data-lp value="${esc(v)}" aria-label="Item"><button type="button" class="ico danger" data-act="line-del" title="Remover este item" aria-label="Remover este item">✕</button></div>`;
+/* cor de uma série: "Nome #RRGGBB" no fim da linha, senão a cor padrão da posição */
+const corSerie = (v, i) => (/#[0-9a-fA-F]{6}\s*$/.exec(v || '') || [])[0]?.trim() || (i ? CORES_GRAF[i % CORES_GRAF.length] : corDe(R().meta));
+const lineRow = (v, ci = null) => `<div class="lrow">${ci == null ? '' : `<button type="button" class="cor-bt" data-act="cor-serie" title="Escolher a cor desta série" aria-label="Escolher a cor desta série"><i style="background:${corSerie(v, ci)}"></i></button>`}<input type="text" data-lp value="${esc(v)}" aria-label="Item"><button type="button" class="ico danger" data-act="line-del" title="Remover este item" aria-label="Remover este item">✕</button></div>`;
 
 /* Tabela: o modelo continua sendo colunas[] + linhas[] ("a | b | c"), mas o usuário edita numa grade */
 function gridHTML(base, it) {
@@ -160,7 +162,7 @@ const PANES = {
       ${fieldHTML('meta.paginaInicial', { t: 'number', l: 'Número da primeira página', h: 'Use se o seu setor não começa na página 1 do relatório geral.' }, m.paginaInicial)}
     </div>
     <div class="card"><h2>Aparência</h2>
-      <div class="f"><span class="lb">Cor do setor</span><div class="swatches">${Object.entries(TEMAS).map(([k, v]) => `<button type="button" class="swatch ${m.tema === k ? 'on' : ''}" data-act="tema" data-v="${k}" aria-pressed="${m.tema === k}"><i style="background:${COR[k]}"></i>${v}</button>`).join('')}</div></div>
+      <div class="f"><span class="lb">Cor do setor</span><div class="swatches">${Object.entries(TEMAS).map(([k, v]) => `<button type="button" class="swatch ${m.tema === k ? 'on' : ''}" data-act="tema" data-v="${k}" aria-pressed="${m.tema === k}"><i style="background:${COR[k]}"></i>${v}</button>`).join('')}<button type="button" class="swatch ${m.tema === 'pers' ? 'on' : ''}" data-act="tema-pers" aria-pressed="${m.tema === 'pers'}" title="Abre a roda de cores"><i class="${m.tema === 'pers' ? '' : 'arco'}" style="${m.tema === 'pers' ? `background:${m.cor}` : ''}"></i>${m.tema === 'pers' ? `Personalizada ${esc(m.cor)}` : 'Outra cor…'}</button></div></div>
       ${fieldHTML('meta.capa', { t: 'image', enq: 1, l: 'Foto da página de abertura', h: 'Opcional. Se não escolher, a página fica só com a cor.' }, m.capa)}
     </div>
     <div class="nav-b"><span></span><button type="button" class="primary" data-act="aba" data-v="resumo">Próximo: Resumo →</button></div>`;
@@ -262,7 +264,7 @@ ed.addEventListener('keydown', e => {
   const el = e.target;
   if (el.hasAttribute('data-lp')) { // Enter = novo item; Backspace em item vazio = remove
     const row = el.closest('.lrow');
-    if (e.key === 'Enter') { e.preventDefault(); row.insertAdjacentHTML('afterend', lineRow('')); row.nextElementSibling.querySelector('input').focus(); }
+    if (e.key === 'Enter') { e.preventDefault(); const c = row.parentElement; row.insertAdjacentHTML('afterend', lineRow('', c.hasAttribute('data-cor') ? [...c.children].indexOf(row) + 1 : null)); row.nextElementSibling.querySelector('input').focus(); }
     else if (e.key === 'Backspace' && !el.value && row.parentElement.children.length > 1) { e.preventDefault(); const prev = row.previousElementSibling || row.nextElementSibling; row.remove(); const pi = prev.querySelector('input'); pi.focus(); pi.dispatchEvent(new Event('input', { bubbles: true })); }
   } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && el.tagName === 'TEXTAREA') { e.preventDefault(); negrito(el); }
 });
@@ -334,8 +336,22 @@ document.addEventListener('click', e => {
     case 'aba': aba = b.dataset.v; save(); renderEditor({ top: true }); return;
     case 'dica-fechar': try { localStorage.setItem(KEY + '-dica', '1'); } catch {} return renderEditor();
     case 'tema': r.meta.tema = b.dataset.v; save(); renderEditor(); renderPreview(); return;
+    case 'tema-pers': { // roda de cores: a página muda enquanto se escolhe
+      const m = r.meta, antes = { tema: m.tema, cor: m.cor }, amostra = b.querySelector('i');
+      return RodaCores.abrir(b, m.cor || corDe(m), {
+        aoMudar(h) { m.tema = 'pers'; m.cor = h; amostra.className = ''; amostra.style.background = h; refresh(); },
+        aoConfirmar(h) { m.tema = 'pers'; m.cor = h; save(); renderEditor(); renderPreview(); },
+        aoCancelar() { Object.assign(m, antes); renderEditor(); renderPreview(); },
+      });
+    }
+    case 'cor-serie': {
+      const row = b.closest('.lrow'), inp = row.querySelector('[data-lp]'), i = [...row.parentElement.children].indexOf(row), orig = inp.value;
+      const nome = orig.replace(/\s*#[0-9a-fA-F]{6}\s*$/, '').trim() || `Série ${i + 1}`;
+      const pinta = v => { inp.value = v; b.firstElementChild.style.background = corSerie(v, i); inp.dispatchEvent(new Event('input', { bubbles: true })); };
+      return RodaCores.abrir(b, corSerie(orig, i), { aoMudar: h => pinta(`${nome} ${h}`), aoCancelar: () => pinta(orig) });
+    }
     case 'bold': return negrito(ed.querySelector(`textarea[data-path="${p}"]`));
-    case 'line-add': { const c = b.previousElementSibling; c.insertAdjacentHTML('beforeend', lineRow('')); c.lastElementChild.querySelector('input').focus(); return; }
+    case 'line-add': { const c = b.previousElementSibling; c.insertAdjacentHTML('beforeend', lineRow('', c.hasAttribute('data-cor') ? c.children.length : null)); c.lastElementChild.querySelector('input').focus(); return; }
     case 'line-del': { const row = b.closest('.lrow'), c = row.parentElement; if (c.children.length > 1) { const nxt = row.nextElementSibling || row.previousElementSibling; row.remove(); nxt.querySelector('input').focus(); } else row.querySelector('input').value = ''; c.querySelector('[data-lp]').dispatchEvent(new Event('input', { bubbles: true })); return; }
     case 'g-addrow': case 'g-addcol': case 'g-delrow': case 'g-delcol': {
       const t = b.closest('[data-grid]') || ed.querySelector(`[data-grid="${p}"]`); const base = t.dataset.grid; const g = gridRead(t); const i = +b.dataset.i;
@@ -362,19 +378,62 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('menu-rel').open) $('menu-rel').open = false;
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !emHist && !e.shiftKey && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && historico.length) { e.preventDefault(); desfazer(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !emHist && !e.shiftKey && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable && historico.length) { e.preventDefault(); desfazer(); }
 });
 // Clicar na página do relatório leva ao trecho correspondente no editor
 $('pages').addEventListener('click', e => {
-  if (emHist) return;
-  const pg = e.target.closest('.page'); if (!pg) return;
-  const blk = e.target.closest('[data-si]');
+  if (emHist || e.target.closest('[data-ed]')) return; // texto: edição ali mesmo (edicao.js)
+  irAoTrecho(e.target);
+});
+function irAoTrecho(alvo) {
+  const pg = alvo.closest('.page'); if (!pg) return;
+  const blk = alvo.closest('[data-si]');
   if (blk) { const si = +blk.dataset.si; aba = 'ativ'; R().secoes[si]._aberta = true; foco = { si, flash: true }; }
   else if (/\b(geral|back|sumario)\b/.test(pg.className)) aba = 'extras';
   else if (pg.classList.contains('capa')) aba = 'info';
   else if (pg.classList.contains('intro')) aba = 'resumo';
   else return;
   save(); renderEditor({ top: !blk }); irPara('edit');
+}
+
+/* Edição direta: clicar no texto da página e digitar ali mesmo (o painel ao lado acompanha) */
+const celulaDe = el => { const it = getp(R(), el.dataset.ed), [i, j] = el.dataset.cell.split('.').map(Number); return { it, i, j }; };
+const itemDaLista = el => { const ks = el.dataset.ed.split('.'), k = +ks.pop(); return [ks.join('.'), k]; };
+const direto = EdicaoDireta.ligar({
+  raiz: $('pages'), ativo: () => !emHist && !versaoVista,
+  valor(el) {
+    if (el.dataset.cell != null) { const { it, i, j } = celulaDe(el); return i < 0 ? it.colunas[j] || '' : (String(it.linhas[i] || '').split('|')[j] || '').trim(); }
+    return String(getp(R(), el.dataset.ed) ?? '');
+  },
+  gravar(el, v) {
+    const path = el.dataset.ed;
+    if (el.dataset.cell != null) {
+      const { it, i, j } = celulaDe(el);
+      if (i < 0) it.colunas[j] = v;
+      else { const c = String(it.linhas[i] || '').split('|').map(x => x.trim()); while (c.length < it.colunas.length) c.push(''); c[j] = v.replace(/\|/g, '/'); it.linhas[i] = c.join(' | '); }
+    } else {
+      if (el.dataset.em === 'n') v = Math.max(0, Math.min(100, parseFloat(String(v).replace(',', '.')) || 0));
+      setp(R(), path, v);
+      const c = ed.querySelector(`[data-path="${path}"]`); if (c && c.type !== 'checkbox') c.value = v; // campo correspondente no painel
+      if (/^secoes\.\d+\.titulo$/.test(path)) { const t = ed.querySelector(`details[data-si="${path.split('.')[1]}"] .tt`); if (t) t.firstChild.textContent = v || 'Tópico sem título'; }
+      if (/^meta\.(sigla|numero)$/.test(path)) tituloBarra();
+    }
+    save();
+  },
+  concluir(el) {
+    if (el.dataset.li != null) { const [lp, k] = itemDaLista(el), arr = getp(R(), lp); if (arr.length > 1 && !String(arr[k] || '').trim()) { arr.splice(k, 1); save(); } }
+    setTimeout(() => { if (!ed.contains(document.activeElement) && !emHist) renderEditor(); }, 0); // não tira o foco de quem passou a digitar no painel
+    return renderPreview();
+  },
+  async novoItem(el) {
+    const [lp, k] = itemDaLista(el); getp(R(), lp).splice(k + 1, 0, ''); save();
+    await renderPreview(); direto.focar(`${lp}.${k + 1}`); renderEditor();
+  },
+  async removerItem(el) {
+    const [lp, k] = itemDaLista(el), arr = getp(R(), lp); if (arr.length < 2) return;
+    arr.splice(k, 1); save(); await renderPreview(); direto.focar(`${lp}.${Math.max(0, k - 1)}`); renderEditor();
+  },
+  painel: { rotulo: 'Abrir no painel', dica: 'Mostra este trecho no painel de edição', abrir: el => irAoTrecho(el) },
 });
 
 /* ===== Renderização do relatório (595 x 842, medidas do Figma) ===== */
@@ -389,8 +448,10 @@ const fotoSVG = (src, pos) => {
 const FOOT = `<svg class="full" viewBox="0 0 595 842"><path d="${SHAPES.footGrey}" fill="#959595"/><path d="${SHAPES.footGold}" style="fill:var(--main)"/></svg>`;
 
 /* Gráficos desenhados em HTML/CSS a partir dos números (sem biblioteca) */
+/* atributos de edição direta (ver edicao.js): caminho no relatório + modo */
+const ed$ = (path, m = 't', x = '') => path == null ? '' : ` data-ed="${path}" data-em="${m}"${x}`;
 const CORES_GRAF = ['var(--main)', '#6685A2', '#004A80', '#38C57F', '#F1C232', '#95A8A0'];
-function graficoHTML(it) {
+function graficoHTML(it, base) {
   const series = it.series || [];
   const rows = (it.dados || []).map(l => { const p = l.split('|').map(x => x.trim()); return { n: p[0] || '', v: p.slice(1).map(x => parseFloat(String(x).replace(/\./g, '').replace(',', '.')) || 0), t: p.slice(1) }; });
   if (!rows.length) return '';
@@ -398,8 +459,8 @@ function graficoHTML(it) {
   const cor = i => (/#[0-9a-fA-F]{6}\s*$/.exec(series[i] || '') || [])[0]?.trim() || CORES_GRAF[i % CORES_GRAF.length]; // "Nome #RRGGBB" escolhe a cor da série
   const nS = Math.max(1, ...rows.map(r => r.v.length));
   const leg = nS > 1 || series.length ? `<div class="g-leg">${(series.length ? series : rows[0].v.map((_, i) => 'Série ' + (i + 1))).map((s, i) => `<span><i style="background:${cor(i)}"></i>${esc(nomeS(i) || s)}</span>`).join('')}</div>` : '';
-  const tit = it.titulo ? `<div class="g-tit">${esc(it.titulo)}</div>` : '';
-  const fonte = it.fonte ? `<div class="g-fonte">${rich(it.fonte)}</div>` : '';
+  const tit = it.titulo ? `<div class="g-tit"${ed$(base && base + '.titulo')}>${esc(it.titulo)}</div>` : '';
+  const fonte = it.fonte ? `<div class="g-fonte"${ed$(base && base + '.fonte', 'r')}>${rich(it.fonte)}</div>` : '';
   let corpo = '';
   if (it.modo === 'pizza') {
     const tot = rows.reduce((a, r) => a + (r.v[0] || 0), 0) || 1; let acc = 0;
@@ -415,27 +476,29 @@ function graficoHTML(it) {
   }
   return `<div class="grafico">${tit}${corpo}${leg}${fonte}</div>`;
 }
-function blocoHTML(it) {
+function blocoHTML(it, base) {
+  const e = (k, m, x) => ed$(base && `${base}.${k}`, m, x);
   switch (it.tipo) {
-    case 'texto': return `<div class="t-texto">${paras(it.texto)}</div>`;
-    case 'subtitulo': return `<h3 class="h2">${esc(it.texto)}</h3>`;
-    case 'destaque': return `<div class="destaque">${it.rotulo ? `<b>${esc(it.rotulo)}</b> ` : ''}${rich(it.texto).replace(/\n/g, '<br>')}</div>`;
-    case 'resultados': return `<div class="resultados">${it.titulo ? `<div class="h2">${esc(it.titulo)}</div>` : ''}${(it.linhas || []).map(l => `<div class="ln">${rich(l)}</div>`).join('')}</div>`;
-    case 'lista': return `<div class="lista"><div class="cap">${esc(it.titulo)}</div>${(it.linhas || []).map(l => `<div class="ln">${rich(l)}</div>`).join('')}<div class="rod"></div></div>`;
-    case 'tabela': return `<table class="tabela${it.simples ? ' simples' : ''}"><thead><tr>${(it.colunas || []).map(c => `<th>${rich(c)}</th>`).join('')}</tr></thead><tbody>${(it.linhas || []).map(l => `<tr>${l.split('|').map(c => `<td>${rich(c.trim()).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-    case 'barra': { const p = Math.max(0, Math.min(100, +it.percentual || 0)); return `<div class="barra" style="--p:${p}%">${it.titulo ? `<div class="h2 tt">${esc(it.titulo)}</div>` : ''}<div class="fill" style="width:${p}%">${p}%</div>${it.legenda ? `<div class="leg"><i></i>${esc(it.legenda)}</div>` : ''}</div>`; }
-    case 'kpis': { const g = (it.cards || []).length === 1; return `<div class="kpis ${it.horizontal ? 'h' : 'v'}">${(it.cards || []).map(c => `<div class="card"><div class="l ${g ? 'g' : ''}">${esc(c.rotulo)}</div><div class="v">${esc(c.valor)}</div>${c.legenda ? `<div class="s">${esc(c.legenda)}</div>` : ''}</div>`).join('')}</div>`; }
-    case 'grafico': return graficoHTML(it);
-    case 'imagem': return it.src ? `<div class="imagem ${it.sangria ? 'sangra' : ''}" style="--h:${+it.altura || 200}px"><img src="${it.src}">${it.legenda ? `<div class="cap">${esc(it.legenda)}</div>` : ''}</div>` : '';
+    case 'texto': return `<div class="t-texto"${e('texto', 'p')}>${paras(it.texto)}</div>`;
+    case 'subtitulo': return `<h3 class="h2"${e('texto')}>${esc(it.texto)}</h3>`;
+    case 'destaque': return `<div class="destaque">${it.rotulo ? `<b${e('rotulo')}>${esc(it.rotulo)}</b> ` : ''}<span${e('texto', 'b')}>${rich(it.texto).replace(/\n/g, '<br>')}</span></div>`;
+    case 'resultados': return `<div class="resultados">${it.titulo ? `<div class="h2"${e('titulo')}>${esc(it.titulo)}</div>` : ''}${(it.linhas || []).map((l, k) => `<div class="ln"${e('linhas.' + k, 'r', ' data-li')}>${rich(l)}</div>`).join('')}</div>`;
+    case 'lista': return `<div class="lista"><div class="cap"${e('titulo')}>${esc(it.titulo)}</div>${(it.linhas || []).map((l, k) => `<div class="ln"${e('linhas.' + k, 'r', ' data-li')}>${rich(l)}</div>`).join('')}<div class="rod"></div></div>`;
+    case 'tabela': return `<table class="tabela${it.simples ? ' simples' : ''}"><thead><tr>${(it.colunas || []).map((c, j) => `<th${ed$(base, 'r', ` data-cell="-1.${j}"`)}>${rich(c)}</th>`).join('')}</tr></thead><tbody>${(it.linhas || []).map((l, i) => `<tr>${l.split('|').map((c, j) => `<td${ed$(base, 'b', ` data-cell="${i}.${j}"`)}>${rich(c.trim()).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    case 'barra': { const p = Math.max(0, Math.min(100, +it.percentual || 0)); return `<div class="barra" style="--p:${p}%">${it.titulo ? `<div class="h2 tt"${e('titulo')}>${esc(it.titulo)}</div>` : ''}<div class="fill" style="width:${p}%"><span${e('percentual', 'n')}>${p}</span>%</div>${it.legenda ? `<div class="leg"><i></i><span${e('legenda')}>${esc(it.legenda)}</span></div>` : ''}</div>`; }
+    case 'kpis': { const g = (it.cards || []).length === 1; return `<div class="kpis ${it.horizontal ? 'h' : 'v'}">${(it.cards || []).map((c, j) => `<div class="card"><div class="l ${g ? 'g' : ''}"${e(`cards.${j}.rotulo`)}>${esc(c.rotulo)}</div><div class="v"${e(`cards.${j}.valor`)}>${esc(c.valor)}</div>${c.legenda ? `<div class="s"${e(`cards.${j}.legenda`)}>${esc(c.legenda)}</div>` : ''}</div>`).join('')}</div>`; }
+    case 'grafico': return graficoHTML(it, base);
+    case 'imagem': return it.src ? `<div class="imagem ${it.sangria ? 'sangra' : ''}" style="--h:${+it.altura || 200}px"><img src="${it.src}">${it.legenda ? `<div class="cap"${e('legenda')}>${esc(it.legenda)}</div>` : ''}</div>` : '';
   }
   return '';
 }
 // agrupa blocos marcados "ao lado do próximo" em duas colunas
-function blocosDe(itens) {
+function blocosDe(itens, si) {
   const out = [];
   for (let i = 0; i < itens.length; i++) {
-    const a = blocoHTML(itens[i]); if (!a) continue;
-    const b = itens[i].lado && itens[i + 1] ? blocoHTML(itens[i + 1]) : '';
+    const base = j => si == null ? null : `secoes.${si}.itens.${j}`;
+    const a = blocoHTML(itens[i], base(i)); if (!a) continue;
+    const b = itens[i].lado && itens[i + 1] ? blocoHTML(itens[i + 1], base(i + 1)) : '';
     if (b) { out.push(`<div class="linha">${a}${b}</div>`); i++; } else out.push(a);
   }
   return out;
@@ -452,18 +515,19 @@ async function renderPreview() {
   const tema = m.tema || 'dourado';
   const pages = []; const sumEntries = [];
   const add = (cls, inner, extra = '') => { const p = htmlNode(`<section class="page ${cls}" ${extra}>${inner}<div class="pn"></div></section>`); host.append(p); pages.push(p); return p; };
-  const ctxPadrao = { tema, sigla: m.sigla, numero: m.numero };
-  const internas = (extra = '', style = '', c = ctxPadrao) => add(`t-${c.tema} ${extra}`, `<img class="bgc" src="assets/bg-conteudo.png">${FOOT}<div class="hd-txt">Relatório Trimestral nº ${esc(c.numero)} ${esc(c.sigla)}</div><img class="hd-logo" src="assets/logo-escuro.png"><div class="body"></div>`, `style="${style}" data-tema="${c.tema}"`);
+  const ctxPadrao = { tema, cor: m.cor, sigla: m.sigla, numero: m.numero };
+  const chaveTema = c => c.tema === 'pers' ? 'pers' + c.cor : c.tema;
+  const internas = (extra = '', style = '', c = ctxPadrao) => add(`t-${c.tema} ${extra}`, `<img class="bgc" src="assets/bg-conteudo.png">${FOOT}<div class="hd-txt">Relatório Trimestral nº ${esc(c.numero)} ${esc(c.sigla)}</div><img class="hd-logo" src="assets/logo-escuro.png"><div class="body"></div>`, `style="${style};${varsTema(c)}" data-tema="${chaveTema(c)}"`);
 
   // Capa geral (opcional) — verde, como a capa do relatório consolidado
-  if (m.capaGeral) add('t-verde capa geral', `${fotoSVG(m.capaGeralFoto, m.capaGeralFotoPos)}${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº ${esc(m.numero)} | ${esc(m.orgao)}</div>`);
+  if (m.capaGeral) add('t-verde capa geral', `${fotoSVG(m.capaGeralFoto, m.capaGeralFotoPos)}${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº <span${ed$('meta.numero')}>${esc(m.numero)}</span> | <span${ed$('meta.orgao')}>${esc(m.orgao)}</span></div>`);
   // Relatório consolidado: a capa de abertura vem dos outros relatórios, então a do próprio setor não é gerada.
   // Abre o relatório a capa geral; sem ela, a primeira capa trazida (se for o primeiro item); senão, a do próprio setor.
-  const capaTrazida = s => add(`t-${(s.ctx || ctxPadrao).tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(s.foto, s.fotoPos)}<img class="logo-c" src="assets/logo.png"><h1>${esc(s.setor)}</h1>`, `data-si="${r.secoes.indexOf(s)}"`);
+  const capaTrazida = s => add(`t-${(s.ctx || ctxPadrao).tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(s.foto, s.fotoPos)}<img class="logo-c" src="assets/logo.png"><h1${ed$(`secoes.${r.secoes.indexOf(s)}.setor`)}>${esc(s.setor)}</h1>`, `data-si="${r.secoes.indexOf(s)}" style="${varsTema(s.ctx || ctxPadrao)}"`);
   const abertura = !m.capaGeral && r.secoes[0] && r.secoes[0].capa ? r.secoes[0] : null;
   const abrirSetor = () => {
     if (m.capaGeral || abertura) return;
-    add(`t-${tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(m.capa, m.capaPos)}<img class="logo-c" src="assets/logo.png"><h1>${esc(m.setor)}</h1>`);
+    add(`t-${tema} capa`, `${swoosh(SHAPES.swooshCover, 'fill-rule="evenodd" clip-rule="evenodd"')}${fotoSVG(m.capa, m.capaPos)}<img class="logo-c" src="assets/logo.png"><h1${ed$('meta.setor')}>${esc(m.setor)}</h1>`, `style="${varsTema(ctxPadrao)}"`);
   };
   if (abertura) sumEntries.push({ t: abertura.setor, p: capaTrazida(abertura), capa: true });
   else if (!m.capaGeral) abrirSetor();
@@ -474,14 +538,14 @@ async function renderPreview() {
   if (r.resumo || r.resumoImagem) {
     const intro = internas('intro', r.resumoImagem ? `--img-h:${+r.resumoAltura || 300}px` : '');
     const b = intro.querySelector('.body');
-    b.append(htmlNode(`<h2 class="h2">${esc(m.setor)}</h2>`), htmlNode(`<div class="t-texto">${paras(r.resumo)}</div>`));
+    b.append(htmlNode(`<h2 class="h2"${ed$('meta.setor')}>${esc(m.setor)}</h2>`), htmlNode(`<div class="t-texto"${ed$('resumo', 'p')}>${paras(r.resumo)}</div>`));
     if (r.resumoImagem) intro.insertBefore(Object.assign(document.createElement('img'), { className: 'full-img', src: r.resumoImagem }), intro.querySelector('.pn'));
     sumEntries.push({ t: 'Resumo', p: intro });
   }
   // Seções (cada título acompanha o 1º bloco para não ficar órfão)
   let pagina = null;
   const colocar = (node, forceNew, c = ctxPadrao) => {
-    if (!pagina || forceNew || pagina.dataset.tema !== c.tema || pagina.dataset.sigla !== c.sigla) { pagina = internas('', '', c); pagina.dataset.sigla = c.sigla; }
+    if (!pagina || forceNew || pagina.dataset.tema !== chaveTema(c) || pagina.dataset.sigla !== c.sigla) { pagina = internas('', '', c); pagina.dataset.sigla = c.sigla; }
     const body = pagina.querySelector('.body');
     body.append(node);
     if (body.scrollHeight > body.clientHeight + 1 && body.children.length > 1) {
@@ -513,16 +577,16 @@ async function renderPreview() {
       pagina = null; if (s === abertura) continue; // já aberta no início do relatório
       sumEntries.push({ t: s.setor, p: capaTrazida(s), capa: true }); continue;
     }
-    const blocos = blocosDe(s.itens);
-    const titulo = s.titulo ? `<h2 class="h2">${esc(s.titulo)}</h2>` : '';
-    const marca = (n, si) => { n.dataset.si = si; return n; };
     const si = r.secoes.indexOf(s);
+    const blocos = blocosDe(s.itens, si);
+    const titulo = s.titulo ? `<h2 class="h2"${ed$(`secoes.${si}.titulo`)}>${esc(s.titulo)}</h2>` : '';
+    const marca = (n, si) => { n.dataset.si = si; return n; };
     colocar(marca(htmlNode(`<div class="bloco">${titulo}${blocos.shift() || ''}</div>`), si), s.quebra || pagina === null, c);
     if (s.titulo) sumEntries.push({ t: s.titulo, p: pagina });
     for (const h of blocos) colocar(marca(htmlNode(h), si), false, c);
   }
   // Contracapa (opcional)
-  if (m.contracapa) add('t-verde capa back', `${swoosh(SHAPES.swoosh)}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº ${esc(m.numero)} | ${esc(m.orgao)}</div>`);
+  if (m.contracapa) add('t-verde capa back', `${swoosh(SHAPES.swoosh)}<img class="logo-c" src="assets/logo.png"><h1>Relatório<br>Trimestral</h1><div class="pill">nº <span${ed$('meta.numero')}>${esc(m.numero)}</span> | <span${ed$('meta.orgao')}>${esc(m.orgao)}</span></div>`);
 
   // Numeração e sumário
   const ini = +m.paginaInicial || 1;
@@ -532,6 +596,7 @@ async function renderPreview() {
   if (sumPage) sumPage.querySelector('.sum-list').innerHTML = listadas.map(e => `<div class="sum-row"><span class="t">${esc(e.t)}</span><span class="n">${pad2(ini + pages.indexOf(e.p))}</span></div>`).join('');
   document.title = `Relatório Trimestral ${m.numero.replace('/', '-')} ${m.sigla}`;
   $('page-count').textContent = `${pages.length} página${pages.length === 1 ? '' : 's'}`;
+  direto.preparar(host);
 }
 
 function imprimir(confirmado) {
@@ -615,7 +680,7 @@ const rotuloRel = x => `${x.meta.sigla} — nº ${x.meta.numero}`;
 function abrirTrazer() {
   const outros = state.reports.filter(x => x.id !== atualId);
   $('tz-lista').innerHTML = outros.length ? outros.map(x => `<fieldset class="tz-rel" data-rid="${x.id}">
-    <legend><i style="background:${COR[x.meta.tema] || '#999'}"></i>${esc(rotuloRel(x))}<small>${esc(x.meta.setor)}</small></legend>
+    <legend><i style="background:${corDe(x.meta)}"></i>${esc(rotuloRel(x))}<small>${esc(x.meta.setor)}</small></legend>
     <button type="button" class="mini tz-all" data-act="trazer-todos">Marcar / desmarcar tudo</button>
     <label class="tz-i"><input type="checkbox" data-capa> <span><b>Capa do setor</b><small>página de abertura com o nome, a cor e a foto (o sumário não é trazido)</small></span></label>
     ${x.resumo ? `<label class="tz-i"><input type="checkbox" data-resumo> <span><b>Resumo do trimestre</b><small>vira um tópico com o texto do resumo</small></span></label>` : ''}

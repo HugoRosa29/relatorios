@@ -7,14 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=7">
+<link rel="stylesheet" href="app.css?v=8">
 <link rel="stylesheet" href="report.css?v=7">
+<link rel="stylesheet" href="slides.css?v=1">
 </head>
 <body class="home">
 <header id="appbar">
   <img class="mark" src="assets/logo-verde.png" alt=""><span class="brand"><small>Terracap · Companhia Imobiliária de Brasília</small>Relatórios Trimestrais</span>
   <span class="spacer"></span>
-  <button class="bar-btn" data-act="importar" title="Carrega um arquivo salvo anteriormente">Abrir cópia de segurança</button>
+  <button class="bar-btn" data-act="salvar-tudo" title="Baixa um único arquivo .json com todos os relatórios e apresentações">Salvar tudo (.json)</button>
+  <button class="bar-btn" data-act="importar" title="Abre um arquivo salvo anteriormente: um relatório, uma apresentação ou o ambiente completo">Abrir cópia de segurança</button>
+  <button class="bar-btn" data-act="nova-apr">+ Nova apresentação</button>
   <button class="primary" data-act="novo">+ Novo relatório</button>
   <input type="file" id="file-import" accept="application/json" multiple hidden>
 </header>
@@ -25,6 +28,11 @@
     <p id="home-sub" class="home-sub"></p>
   </div>
   <div id="cards" class="cards"></div>
+  <div class="home-h home-h2">
+    <h1>Suas apresentações</h1>
+    <p id="deck-sub" class="home-sub"></p>
+  </div>
+  <div id="decks" class="cards"></div>
   <aside class="tip home-tip">
     <span class="eyebrow">Montar um relatório reunindo várias áreas</span>
     <p>Crie um <b>novo relatório</b> (por exemplo, o da COINT) e, ao editar, use <b>Trazer de outro relatório</b> para copiar para ele os tópicos que quiser dos relatórios de outras áreas. Cada tópico trazido continua editável e o original não é alterado.</p>
@@ -49,8 +57,23 @@
   </form>
 </dialog>
 
+<dialog id="dlg-apr" aria-labelledby="dlg-apr-t">
+  <form method="dialog" id="form-apr">
+    <h2 id="dlg-apr-t">Nova apresentação</h2>
+    <label class="f"><span class="lb">Nome da apresentação</span><input type="text" id="a-titulo" placeholder="Ex.: Relatório do 2º trimestre de 2026" required></label>
+    <label class="f"><span class="lb">Começar com</span><select id="a-base"><option value="vazia">Capa e um slide de texto</option><option value="exemplo">Exemplo com um slide de cada modelo</option></select></label>
+    <label class="f" id="a-rel-w"><span class="lb">Ou criar a partir de um relatório</span><select id="a-rel"><option value="">— nenhum —</option></select></label>
+    <div class="dlg-b">
+      <button type="button" data-act="apr-fechar">Cancelar</button>
+      <button class="primary" type="submit">Criar e editar</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="assets/shapes.js"></script>
-<script src="store.js?v=9"></script>
-<script src="home.js?v=9"></script>
+<script src="assets/slide-assets.js"></script>
+<script src="store.js?v=13"></script>
+<script src="slides.js?v=2"></script>
+<script src="home.js?v=15"></script>
 </body>
 </html>
